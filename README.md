@@ -61,9 +61,10 @@ experience, as they show you many possibilities missed by one or both players!
 
 Computer hardware and chess software have advanced to the point where even a
 mobile phone, or an engine compiled to JavaScript and run in a web browser such
-as [the Lichess one](https://lichess.org/analysis), is far stronger than any
-human. For casual users, for example wanting to run a quick check on their games
-to find out where the key turning points were, these are quite sufficient.
+as the Stockfish version used in [the Lichess analysis
+tool](https://lichess.org/analysis), is far stronger than any human. For casual
+users, for example wanting to run a quick check on their games to find out where
+the key turning points were, these are quite sufficient.
 
 However, there is still a big gap in strength today between an engine like that
 and an engine run optimally on the most powerful hardware currently available.
@@ -117,8 +118,8 @@ into how these are implemented, but if you know how modern chess software works,
 it is not hard to imagine how it might be done. Virtually all modern engines
 support a text-based protocol called
 [UCI](https://en.wikipedia.org/wiki/Universal_Chess_Interface), which forms a
-standard interface between chess engines and chess GUIs. These days, virtually
-any engine can be used with any chess GUI.
+standard interface between chess engines and chess GUIs. These days, thanks to
+UCI, virtually any engine can be used with any chess GUI.
 
 If a chess GUI can speak UCI to an engine running on the local machine, why
 can't it communicate in exactly the same way over a network with an engine
@@ -186,6 +187,11 @@ fun in the process!
 
 All shell commands are run from the root of this repository unless otherwise
 stated.
+
+Chess software is still advancing rapidly, and so are the features offered by
+cloud providers. It's entirely possible you will need to change the scripts in
+order to get the best results (e.g. upgrade to a newer engine version), or to
+make things work at all. Pull requests are welcome!
 
 ### Stockfish
 
@@ -256,8 +262,8 @@ engine is running in the cloud. If you get this far, congratulations: you have a
 working cloud engine!
 
 (If the `run_stockfish` program worked from the command line but doesn't work
-from your chess GUI (for example if it complains it's not a working UCI engine
-or that the engine died unexpectedly), one tip is to make sure you don't have
+from your chess GUI -- for example if it complains it's not a working UCI engine
+or that the engine died unexpectedly -- one tip is to make sure you don't have
 any firewall software running that is blocking the chess GUI from reaching the
 GCE APIs or your VM.)
 
@@ -276,8 +282,13 @@ have running in your specified project.
 
 ## Leela Chess Zero
 
-At the time of writing, Leela Chess Zero is much harder to get working than
-Stockfish, for a few reasons:
+[Leela Chess Zero](https://lczero.org/) is a chess engine based on deep neural
+networks. As mentioned in the introduction, it aims to use similar techniques to
+AlphaZero.
+
+It's another incredible open source project, but it's not as accessible as
+Stockfish. At the time of writing, Leela Chess Zero is much harder to get
+working, for a few reasons:
 
 * There is no pre-built binary for Linux: we have to build it from source. (The
   way we do this is based on [the LC0
@@ -290,16 +301,28 @@ Stockfish, for a few reasons:
   use](https://cloud.google.com/compute/docs/gpus/gpu-regions-zones). GPUs also
   require [special quota](https://cloud.google.com/compute/quotas#gpu_quota).
 * Using GPUs also requires us to download and install various libraries and
-  drivers, some of which are very large, and not all of which are open source.
+  drivers, including but not limited to
+  [these](https://cloud.google.com/compute/docs/gpus/install-drivers-gpu). Some
+  of the software we need is quite large to download, and not all of it is open
+  source.
 * Even once we have built Leela Chess Zero, we still have to choose a neural
-  network, which is [a non-trivial
+  network to run it with, which is [a non-trivial
   decision](https://lczero.org/play/networks/bestnets/) in itself.
 
-*Full instructions and scripts for Leela Chess Zero will be added later.*
+*This section is a work in progress: instructions and scripts for Leela Chess
+Zero will be added later.*
 
 ## Acknowledgements and sources
 
-I'm not the first person to do something like this; I took heavy inspiration
+First, I must salute the developers who write these amazing chess engines, make
+them available to the world as open source software, and continue to find ways
+to make them stronger and stronger. I've been working with chess engines for
+long enough to remember a time when the best open source engines were vastly
+weaker than the proprietary ones; the fact that open source engines are now
+among today's very strongest is a huge triumph for open source software and a
+credit to the people who work on them.
+
+I'm not the first person to do a project like this; I took heavy inspiration
 from [MattPlaysChess's Cloud Engine blog
 series](https://mattplayschess.com/series/cloud-engines/).
 
