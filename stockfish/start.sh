@@ -60,8 +60,8 @@ gcloud compute instances create $GCP_INSTANCE_NAME \
     --project $GCP_PROJECT \
     --zone $GCP_ZONE \
     --machine-type $GCP_MACHINE_TYPE \
-	--image-project $GCP_IMAGE_PROJECT \
-	--image-family $GCP_IMAGE_FAMILY \
+    --image-project $GCP_IMAGE_PROJECT \
+    --image-family $GCP_IMAGE_FAMILY \
     --metadata=startup-script="sudo apt-get install -y wget unzip && \
         wget https://stockfishchess.org/files/${STOCKFISH_VERSION}.zip -O /tmp/stockfish.zip && \
         unzip /tmp/stockfish.zip -d /tmp/stockfish && \
