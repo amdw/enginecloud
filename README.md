@@ -275,7 +275,7 @@ cores your VM has, otherwise you are wasting cores. Play with various values and
 see what gets you the best performance; most chess UIs have a way to show you
 the calculation speed of the engine while it is analysing.
 
-Once you have finished with the engine, you should run `stockfish/stop.sh` to
+Once you have finished with the engine, you should run `stockfish/delete.sh` to
 delete the VM, so you are no longer charged for it. Alternatively, you can do it
 manually via the Google Compute Engine console or the `gcloud` CLI.
 
