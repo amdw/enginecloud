@@ -17,4 +17,6 @@ set -e
 
 source leelazero/settings.sh
 
-gcloud compute ssh $GCP_INSTANCE_NAME --zone $GCP_ZONE
+gcloud compute ssh $GCP_INSTANCE_NAME \
+    --project=$GCP_PROJECT \
+    --zone=$GCP_ZONE
