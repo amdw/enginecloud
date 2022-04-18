@@ -21,6 +21,7 @@ Cloud](https://en.chessbase.com/post/tutorial-how-does-the-engine-cloud-work) or
   the cost of running the VMs on the cloud provider. Modern cloud providers
   usually provide very fine-grained billing, even down to the second, so you
   only pay for exactly what you use.
+* You get a very wide choice of chess GUI (and the operating system etc).
 * You get full control over the software and (virtual) hardware: you can choose
   a location for the VMs close to you to minimise latency, what VM type you use
   (how many CPU cores, what type of CPU etc), what version of the chess software
@@ -34,6 +35,7 @@ The disadvantages compared to a paid Cloud Engine product are:
   to reduce that somewhat, but you still need to make a number of decisions that
   require a degree of understanding, and install and use software on your
   computer that is normally only used by developers.
+* You don't get a hosted web UI or mobile app.
 * You won't get the kind of customer support you would get from a dedicated
   provider.
 * The pricing model of cloud providers is more complex, and once you start using
