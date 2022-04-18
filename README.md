@@ -292,14 +292,12 @@ networks. As mentioned in the introduction, it aims to use similar techniques to
 AlphaZero.
 
 It's another incredible open source project, but it's not as accessible as
-Stockfish. At the time of writing, Leela Chess Zero is much harder to get
-working, for a few reasons:
+Stockfish. I would recommend trying the instructions for Stockfish before Leela,
+to familiarise yourself with the basic concepts and techniques.
 
-* There is no pre-built binary for Linux: we have to build it from source. (The
-  way we do this is based on [the LC0
-  README](https://github.com/LeelaChessZero/lc0) and [this
-  guide](https://lczero.org/dev/wiki/google-cloud-guide-lc0/), among various
-  other sources.)
+At the time of writing, Leela Chess Zero is much harder to get working, for a
+few reasons:
+
 * To get optimal performance, we need to use a [machine type that has at least
   one GPU](https://cloud.google.com/compute/docs/gpus). We have to choose the
   GPU type we want, and our choice will restrict the [GCE zones we can
@@ -310,12 +308,110 @@ working, for a few reasons:
   [these](https://cloud.google.com/compute/docs/gpus/install-drivers-gpu). Some
   of the software we need is quite large to download, and not all of it is open
   source.
+* There is no pre-built Leela binary for Linux: we have to build it from source.
+  (The way we do this is based on [the LC0
+  README](https://github.com/LeelaChessZero/lc0) and [this
+  guide](https://lczero.org/dev/wiki/google-cloud-guide-lc0/), among various
+  other sources.) The build process is not very user-friendly: there are certain
+  mistakes you can easily make (e.g. trying to build without all the required
+  NVidia software installed) which will result in a successful build but a very
+  slow engine that does not take advantage of the GPU.
 * Even once we have built Leela Chess Zero, we still have to choose a neural
   network to run it with, which is [a non-trivial
   decision](https://lczero.org/play/networks/bestnets/) in itself.
 
-*This section is a work in progress: instructions and scripts for Leela Chess
-Zero will be added later.*
+Because of this, the process of getting a working Leela is quite slow, and it is
+not really practical to start from scratch each time. I therefore recommend once
+you create a working VM, you [create a custom disk
+image](https://cloud.google.com/compute/docs/images/create-delete-deprecate-private-images)
+out of it, stored in Google Cloud Storage. Then, you can delete your VM, and
+create a new one whenever you want, based on the image. This makes it much
+quicker to get a working Leela on demand; however, keeping your image in Google
+Cloud Storage does incur ongoing costs.
+
+As with Stockfish, first create a settings file:
+
+```bash
+cp leelazero/settings_template.sh leelazero/settings.sh
+```
+
+Check the settings in that file, and fill in the missing ones. For the meaning
+of the common environment variables, refer to the Stockfish instructions. The
+only new settings you need are:
+
+* `ACCELERATOR_PARAMS`: this determines how many GPUs your VM will have, and
+  what kind.
+* `GCP_BASE_IMAGE_PROJECT` and `GCP_BASE_IMAGE_FAMILY`: these determine the
+  image that will be used to base the initial VM on, the one in which you will
+  build Leela.
+* `GCP_CREATED_IMAGE_FAMILY`: this is the image family in which your Leela image
+  will be stored, if you choose to create one.
+
+Example parameters known to work are as follows (though I do not claim these are
+anywhere close to optimal):
+
+```bash
+GCP_MACHINE_TYPE=n1-standard-4
+ACCELERATOR_PARAMS="count=1,type=nvidia-tesla-v100"
+```
+
+You will need to refer to [this
+document](https://cloud.google.com/compute/docs/gpus/gpu-regions-zones) for
+which types of GPU are available in which zones. Again, the "equivalent command
+line" feature in the [GCE Console](https://console.cloud.google.com/compute) is
+useful for finding values to slot into these environment variables.
+
+Once you are happy, run `leelazero/create_base.sh` to create the initial VM.
+**Note: VMs with GPUs tend to be substantially more expensive than VMs without,
+so be extra careful to delete such VMs once you no longer need them.**
+
+Now we need to go through the fairly slow process of installing software,
+building the engine and downloading a network. For this, log into your VM with
+`leelazero/ssh.sh`.
+
+(VMs with GPUs seem to boot up a bit slower than VMs without, so you might have
+to retry this a few times until the VM finishes booting.)
+
+Once you're logged in, you should find a copy of this repository in your home
+directory. Have a read of `enginecloud/leelazero/prepare.sh`, particularly the
+environment variables at the top, to see what settings you can tweak at this
+stage; then, run it (from your home directory) to start the download and build
+process. You can expect this to take quite a few minutes.
+
+If all goes well, you should end up with a working version of LeelaZero at
+`lc0/build/release/lc0`. You can test it out with a command like
+`lc0/build/release/lc0 benchmark`; you should see some information about your
+GPU and confirmation it is using some sort of `cudnn` backend. You should also
+see decent `nps` performance figures, well into the thousands.
+
+If this works, exit your SSH session and try out the `$EC_HOME/run_lc0` binary
+built when you ran `create_base.sh`. If all goes well, you should get the LC0
+startup prompt. If this looks good, try adding this `run_lc0` program as an
+engine in your chess GUI, and you should be good to go!
+
+Note that while Leela works with any UCI chess GUI, there are some GUIs which
+offer Leela-specific features: see [the Leela
+quickstart](https://lczero.org/play/quickstart/) for details. I have not tried
+any of these at the time of writing.
+
+The following utility scripts are available to help you manage your VM:
+
+* `leelazero/stop.sh` - stops the VM
+* `leelazero/delete.sh` - deletes the VM
+* `leelazero/check.sh` - lists the VMs and disks you currently have in the
+  project
+
+If you want to create an image for future use, as suggested above, shut down
+Leela if you have it running, and run `leelazero/create_image.sh`. This will
+stop your VM, and create a new disk image based on it. You can then delete your
+VM whenever you like, and create a new one with
+`leelazero/create_from_image.sh`.
+
+(An alternative way to keep a ready-to-go Leela without creating images is to
+*stop* the VM, which shuts it down without deleting its disk. A stopped VM costs
+a lot less than a running one, but you will [continue to incur some
+charges](https://cloud.google.com/compute/docs/instances/stop-start-instance#billing)
+for resources like the disk and IP address. Keeping an image should be cheaper.)
 
 ## Acknowledgements and sources
 
