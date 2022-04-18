@@ -362,8 +362,9 @@ line" feature in the [GCE Console](https://console.cloud.google.com/compute) is
 useful for finding values to slot into these environment variables.
 
 Once you are happy, run `leelazero/create_base.sh` to create the initial VM.
-**Note: VMs with GPUs tend to be substantially more expensive than VMs without,
-so be extra careful to delete such VMs once you no longer need them.**
+**Note: VMs with GPUs tend to be substantially [more
+expensive](https://cloud.google.com/compute/gpus-pricing) than VMs without, so
+be extra careful to delete such VMs once you no longer need them.**
 
 Now we need to go through the fairly slow process of installing software,
 building the engine and downloading a network. For this, log into your VM with
