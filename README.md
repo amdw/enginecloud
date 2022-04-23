@@ -383,7 +383,7 @@ If all goes well, you should end up with a working version of LeelaZero at
 `lc0/build/release/lc0`. You can test it out with a command like
 `lc0/build/release/lc0 benchmark`; you should see some information about your
 GPU and confirmation it is using some sort of `cudnn` backend. You should also
-see decent `nps` performance figures, well into the thousands.
+see decent `nps` performance figures, well into the tens of thousands.
 
 If this works, exit your SSH session and try out the `$EC_HOME/run_lc0` binary
 built when you ran `create_base.sh`. If all goes well, you should get the LC0
