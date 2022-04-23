@@ -25,12 +25,12 @@ IMAGE_NAME="leela-$(date "+%Y%m%d")"
 echo "Stopping the VM instance..."
 gcloud compute instances stop $GCP_INSTANCE_NAME --zone $GCP_ZONE
 
-# Not sure this next step is necessary, but the documentation says to do it:
+# This next step seems to be unnecessary, but the documentation says to do it:
 # https://cloud.google.com/compute/docs/images/create-delete-deprecate-private-images
-gcloud compute instances set-disk-auto-delete $GCP_INSTANCE_NAME \
-    --no-auto-delete \
-    --disk=$GCP_DISK_NAME \
-    --zone $GCP_ZONE
+# gcloud compute instances set-disk-auto-delete $GCP_INSTANCE_NAME \
+#     --no-auto-delete \
+#     --disk=$GCP_DISK_NAME \
+#     --zone $GCP_ZONE
 
 echo "Creating image $IMAGE_NAME"
 gcloud compute images create $IMAGE_NAME \
@@ -41,6 +41,5 @@ gcloud compute images create $IMAGE_NAME \
 echo "Images now in your project in family ${GCP_CREATED_IMAGE_FAMILY}:"
 gcloud compute images list --filter "family:${GCP_CREATED_IMAGE_FAMILY}" --project $GCP_PROJECT
 
-echo "Image created. You can now delete the VM and disks if you wish:"
+echo "Image created. You can now delete the VM if you wish:"
 echo "gcloud compute instances delete $GCP_INSTANCE_NAME --zone $GCP_ZONE"
-echo "gcloud compute disks delete $GCP_DISK_NAME --zone $GCP_ZONE"
