@@ -62,11 +62,13 @@ gcloud compute instances create $GCP_INSTANCE_NAME \
     --machine-type $GCP_MACHINE_TYPE \
     --image-project $GCP_IMAGE_PROJECT \
     --image-family $GCP_IMAGE_FAMILY \
-    --metadata=startup-script="sudo apt-get install -y wget unzip && \
+    --metadata=startup-script="sudo apt-get install -y wget unzip git && \
         wget https://stockfishchess.org/files/${STOCKFISH_VERSION}.zip -O /tmp/stockfish.zip && \
         unzip /tmp/stockfish.zip -d /tmp/stockfish && \
-        chmod a+x /tmp/stockfish/${STOCKFISH_VERSION}/${STOCKFISH_VERSION} && \
-        ln -s /tmp/stockfish/${STOCKFISH_VERSION}/${STOCKFISH_VERSION} /tmp/stockfish/stockfish && \
-        chown ${SSH_USER}:${SSH_USER} -R /tmp/stockfish"
+        chmod a+x /tmp/stockfish/${STOCKFISH_VERSION}/${STOCKFISH_BINARY} && \
+        ln -s /tmp/stockfish/${STOCKFISH_VERSION}/${STOCKFISH_BINARY} /tmp/stockfish/stockfish && \
+        chown ${SSH_USER}:${SSH_USER} -R /tmp/stockfish && \
+		git clone https://github.com/amdw/enginecloud.git /home/${SSH_USER}/enginecloud && \
+		chown ${SSH_USER}:${SSH_USER} -R /home/${SSH_USER}/enginecloud"
 
 echo "Virtual machine has been created and should now be consuming billable resources."
