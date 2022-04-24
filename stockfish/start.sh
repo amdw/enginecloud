@@ -68,7 +68,7 @@ gcloud compute instances create $GCP_INSTANCE_NAME \
         chmod a+x /tmp/stockfish/${STOCKFISH_VERSION}/${STOCKFISH_BINARY} && \
         ln -s /tmp/stockfish/${STOCKFISH_VERSION}/${STOCKFISH_BINARY} /tmp/stockfish/stockfish && \
         chown ${SSH_USER}:${SSH_USER} -R /tmp/stockfish && \
-		git clone https://github.com/amdw/enginecloud.git /home/${SSH_USER}/enginecloud && \
-		chown ${SSH_USER}:${SSH_USER} -R /home/${SSH_USER}/enginecloud"
+        git clone https://github.com/amdw/enginecloud.git /home/${SSH_USER}/enginecloud && \
+        chown ${SSH_USER}:${SSH_USER} -R /home/${SSH_USER}/enginecloud"
 
 echo "Virtual machine has been created and should now be consuming billable resources."
