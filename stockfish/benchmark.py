@@ -44,7 +44,13 @@ def run_benchmark(stockfish_binary: str, threads: int, depth: int) -> Mapping[st
     return result
 
 
-def run_benchmarks(stockfish_binary: str, depth: int, repetitions: int, max_failures_to_improve: int) -> Mapping[int, Sequence[int]]:
+def run_benchmarks(
+    stockfish_binary: str,
+    depth: int,
+    repetitions: int,
+    max_failures_to_improve: int,
+    min_final_threads: int,
+) -> Mapping[int, Sequence[int]]:
     results = collections.defaultdict(list)
     best_average = 0
     failures_to_improve = 0
@@ -60,7 +66,7 @@ def run_benchmarks(stockfish_binary: str, depth: int, repetitions: int, max_fail
         else:
             failures_to_improve += 1
             print(f'Average {average:,.1f} is not an improvement on best {best_average:,.1f}: failures={failures_to_improve}', file=sys.stderr)
-            if failures_to_improve >= max_failures_to_improve:
+            if threads > min_final_threads and failures_to_improve >= max_failures_to_improve:
                 break
 
     return results
@@ -90,7 +96,9 @@ def main():
     parser.add_argument('--max_failures_to_improve', type=int, default=3)
     args = parser.parse_args()
     machine_type = get_machine_type()
-    results = run_benchmarks(args.stockfish_binary, args.depth, args.repetitions, args.max_failures_to_improve)
+    machtype_cpus = int(machine_type.split('-')[-1])
+    results = run_benchmarks(
+        args.stockfish_binary, args.depth, args.repetitions, args.max_failures_to_improve, machtype_cpus)
     print_results(machine_type, results)
 
 
