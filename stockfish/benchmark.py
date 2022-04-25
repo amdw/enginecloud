@@ -87,7 +87,7 @@ def main():
     parser.add_argument('stockfish_binary', default='/tmp/stockfish/stockfish', nargs='?')
     parser.add_argument('--depth', type=int, default=14)
     parser.add_argument('--repetitions', type=int, default=3)
-    parser.add_argument('--max_failures_to_improve', type=int, default=2)
+    parser.add_argument('--max_failures_to_improve', type=int, default=3)
     args = parser.parse_args()
     machine_type = get_machine_type()
     results = run_benchmarks(args.stockfish_binary, args.depth, args.repetitions, args.max_failures_to_improve)
