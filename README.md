@@ -95,9 +95,9 @@ VMs!).
 
 Modern consumer hardware is very different from server hardware, especially with
 devices like laptops that place some degree of emphasis on power efficiency
-rather than raw performance. Chess engine developers often understandably tend
-to place more emphasis on optimising the performance of their software on the
-latter than the former, since that is where they primarily compete.
+rather than raw performance. Chess engine developers understandably tend to put
+more effort into optimising the performance of their software on the latter than
+the former, since that is where they primarily compete.
 
 Another important trend is the emergence of chess engines based on ["deep neural
 networks"](https://en.wikipedia.org/wiki/Deep_learning). DeepMind's
