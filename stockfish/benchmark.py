@@ -77,7 +77,7 @@ def print_results(machine_type: str, results: Mapping[int, Sequence[int]]):
         print(f'{machine_type},{threads},', end='')
         for nps in nps_results:
             print(f'{nps},', end='')
-        print(f'{statistics.mean(nps_results)}')
+        print(statistics.mean(nps_results))
 
 
 def get_machine_type() -> str:
