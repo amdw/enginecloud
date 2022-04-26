@@ -234,7 +234,10 @@ there, and set the ones which are blank. At a minimum, you need to specify:
   "Equivalent Command Line" button at the bottom instead of "Create", and see
   what value is used for the `--machine-type` parameter. If you're just trying
   this out to see if it works, you can use `e2-medium`, but if you want decent
-  performance, you will need something larger.
+  performance, you will need something larger. See
+  [SF_BENCHMARKS.md](stockfish/benchmarks/SF_BENCHMARKS.md) for some benchmarks
+  that will give you an indication of what you can expect from different machine
+  types.
 
 You should also check the other environment variables:
 
