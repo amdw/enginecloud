@@ -16,10 +16,10 @@ Stockfish has a built-in `bench` command, which runs some evaluations and then
 summarises the search speed achieved in nodes per second, or *NPS*. This value
 shows how many positions the engine was able to consider per second.
 
-NPS values aren't necessarily comparable across different engines or engine versions, but
-running the benchmark using the same engine version with different
-configurations is a good way to find how to get the best performance for that
-engine. See [this Chessify blog
+NPS values aren't necessarily comparable across different engines, or even
+different versions of the same engine, but running the benchmark using the same
+engine version with different configurations is a good way to find how to get
+the best performance for that engine. See [this Chessify blog
 post](https://chessify.me/blog/nps-what-are-the-nodes-per-second-in-chess-engine-analysis)
 for more information about the NPS metric.
 
