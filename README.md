@@ -280,9 +280,10 @@ GCE APIs or your VM.)
 
 It's very important for performance to set the number of threads in the UCI
 engine settings. A good general guideline is to use a value close to the number
-of CPU cores your VM has. Most chess UIs have a way to show you the calculation
-speed of the engine while it is analysing. For more information, see [the
-benchmarks document](stockfish/benchmarks/SF_BENCHMARKS.md).
+of CPU cores your VM has: for more information, see [the benchmarks
+document](stockfish/benchmarks/SF_BENCHMARKS.md). Most chess UIs have a way to
+show you the calculation speed of the engine while it is analysing, so you can
+make sure you are getting roughly the performance you expect.
 
 Once you have finished with the engine, you should run `stockfish/delete.sh` to
 delete the VM, so you are no longer charged for it. Alternatively, you can do it
