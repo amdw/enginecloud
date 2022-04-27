@@ -95,9 +95,9 @@ VMs!).
 
 Modern consumer hardware is very different from server hardware, especially with
 devices like laptops that place some degree of emphasis on power efficiency
-rather than raw performance. Chess engine developers often understandably tend
-to place more emphasis on optimising the performance of their software on the
-latter than the former, since that is where they primarily compete.
+rather than raw performance. Chess engine developers understandably tend to put
+more effort into optimising the performance of their software on the latter than
+the former, since that is where they primarily compete.
 
 Another important trend is the emergence of chess engines based on ["deep neural
 networks"](https://en.wikipedia.org/wiki/Deep_learning). DeepMind's
@@ -169,7 +169,8 @@ fun in the process!
 * A computer with a Unix-like environment (e.g. MacOS or Linux), to run the
   commands. The techniques in this repository should be possible to use from
   Windows as well, but I have no personal interest in doing that.
-* A Google Cloud account (see [this guide](https://cloud.google.com/docs/get-started))
+* A Google Cloud account (see [this
+  guide](https://cloud.google.com/docs/get-started))
 * A Google Cloud project with the [Google Compute Engine
   API](https://console.cloud.google.com/compute) enabled
 * You will need the following software installed:
@@ -234,7 +235,10 @@ there, and set the ones which are blank. At a minimum, you need to specify:
   "Equivalent Command Line" button at the bottom instead of "Create", and see
   what value is used for the `--machine-type` parameter. If you're just trying
   this out to see if it works, you can use `e2-medium`, but if you want decent
-  performance, you will need something larger.
+  performance, you will need something larger. See
+  [SF_BENCHMARKS.md](stockfish/benchmarks/SF_BENCHMARKS.md) for some benchmarks
+  that will give you an indication of what you can expect from different machine
+  types.
 
 You should also check the other environment variables:
 
@@ -242,8 +246,9 @@ You should also check the other environment variables:
   By default, `$HOME/enginecloud` will be used. I recommend using a directory
   dedicated to this project, which does not contain any other files you care
   about, as several scripts will write files here.
-* `STOCKFISH_VERSION`: the version of Stockfish that will be downloaded and
-  used.
+* `STOCKFISH_VERSION`, `STOCKFISH_BINARY`: the version of Stockfish that will be
+  downloaded and used, and the filename of the Stockfish binary within the
+  downloaded archive.
 * `GCP_IMAGE_PROJECT` and `GCP_IMAGE_FAMILY`: these determine [the OS
   image](https://cloud.google.com/compute/docs/images) used to create your VM.
 * `GCP_INSTANCE_NAME`: the name of the VM instance that will be created for
@@ -274,10 +279,11 @@ any firewall software running that is blocking the chess GUI from reaching the
 GCE APIs or your VM.)
 
 It's very important for performance to set the number of threads in the UCI
-engine settings. You should use a value *at least* equal to the number of CPU
-cores your VM has, otherwise you are wasting cores. Play with various values and
-see what gets you the best performance; most chess UIs have a way to show you
-the calculation speed of the engine while it is analysing.
+engine settings. A good general guideline is to use a value close to the number
+of CPU cores your VM has: for more information, see [the benchmarks
+document](stockfish/benchmarks/SF_BENCHMARKS.md). Most chess UIs have a way to
+show you the calculation speed of the engine while it is analysing, so you can
+make sure you are getting roughly the performance you expect.
 
 Once you have finished with the engine, you should run `stockfish/delete.sh` to
 delete the VM, so you are no longer charged for it. Alternatively, you can do it
