@@ -77,7 +77,21 @@ graph by running the following from the root of the repo (requires Python 3 and
 ```
 pipenv install --dev
 pipenv shell
-jupyter lab stockfish/benchmarks/sfbench.ipynb
+jupyter lab
+```
+
+Then, run the following code in a notebook in the `stockfish/benchmarks` folder:
+
+```python
+import pandas as pd
+import plotly.express as px
+
+df = pd.read_csv('sfbench.csv')
+fig = px.line(df, x='Threads', y='MeanNPS', color='MachineType',
+              title='Stockfish 15 benchmark per GCE machine type',
+              width=800, height=600)
+fig.update_layout(yaxis_title='Mean NPS')
+fig.show()
 ```
 
 ## Conclusions
