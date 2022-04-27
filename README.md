@@ -245,8 +245,8 @@ You should also check the other environment variables:
   By default, `$HOME/enginecloud` will be used. I recommend using a directory
   dedicated to this project, which does not contain any other files you care
   about, as several scripts will write files here.
-* `STOCKFISH_VERSION`: the version of Stockfish that will be downloaded and
-  used.
+* `STOCKFISH_VERSION`, `STOCKFISH_BINARY`: the version of Stockfish that will be downloaded and
+  used, and the filename of the Stockfish binary within the downloaded archive.
 * `GCP_IMAGE_PROJECT` and `GCP_IMAGE_FAMILY`: these determine [the OS
   image](https://cloud.google.com/compute/docs/images) used to create your VM.
 * `GCP_INSTANCE_NAME`: the name of the VM instance that will be created for
@@ -277,10 +277,9 @@ any firewall software running that is blocking the chess GUI from reaching the
 GCE APIs or your VM.)
 
 It's very important for performance to set the number of threads in the UCI
-engine settings. You should use a value *at least* equal to the number of CPU
-cores your VM has, otherwise you are wasting cores. Play with various values and
-see what gets you the best performance; most chess UIs have a way to show you
-the calculation speed of the engine while it is analysing.
+engine settings. A good general guideline is to use a value similar or equal to the number of CPU
+cores your VM has. Most chess UIs have a way to show you
+the calculation speed of the engine while it is analysing. For more information, see the benchmarks document.
 
 Once you have finished with the engine, you should run `stockfish/delete.sh` to
 delete the VM, so you are no longer charged for it. Alternatively, you can do it
