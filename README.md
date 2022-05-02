@@ -21,6 +21,10 @@ Cloud](https://en.chessbase.com/post/tutorial-how-does-the-engine-cloud-work) or
   the cost of running the VMs on the cloud provider. Modern cloud providers
   usually provide very fine-grained billing, even down to the second, so you
   only pay for exactly what you use.
+  * For example, at the time of writing (May 2022), you can get a 64-core
+    `n2-standard-64` VM in the `europe-west1` region,
+    [capable](stockfish/benchmarks/SF_BENCHMARKS.md) of running Stockfish 15 at
+    over 60 MNPS, for approximately US$2.74 per hour.
 * You get a very wide choice of chess GUI (and the operating system etc). Some
   paid cloud engine providers can only be accessed using the vendor's
   proprietary UIs.
