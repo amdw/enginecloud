@@ -114,8 +114,8 @@ def run_varying_ttsize(
     threads: int,
     series_params: SeriesParams,
 ) -> Mapping[BenchParams, Sequence[int]]:
-    # Start with 1024Mb and increase by 2x each time
-    hash_sizes = itertools.accumulate(itertools.repeat(2), func=operator.mul, initial=1024)
+    # Start with the default and increase by 2x each time
+    hash_sizes = itertools.accumulate(itertools.repeat(2), func=operator.mul, initial=16)
     return run_series(
         stockfish_binary,
         series_params,
