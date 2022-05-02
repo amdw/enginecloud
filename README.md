@@ -289,6 +289,10 @@ document](stockfish/benchmarks/SF_BENCHMARKS.md). Most chess UIs have a way to
 show you the calculation speed of the engine while it is analysing, so you can
 make sure you are getting roughly the performance you expect.
 
+For more information on how to set Stockfish engine parameters, see [the
+Stockfish
+README](https://github.com/official-stockfish/Stockfish/blob/master/README.md).
+
 Once you have finished with the engine, you should run `stockfish/delete.sh` to
 delete the VM, so you are no longer charged for it. Alternatively, you can do it
 manually via the Google Compute Engine console or the `gcloud` CLI.
