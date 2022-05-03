@@ -10,6 +10,7 @@ plotly = "==5.7.0"
 jupyterlab = ">=3"
 ipywidgets = ">=7.6"
 pandas = "*"
+mypy = "*"
 
 [requires]
 python_version = "3.9"

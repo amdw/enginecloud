@@ -17,21 +17,35 @@ import argparse
 import collections
 import csv
 from dataclasses import dataclass
+import dataclasses
 import itertools
 import operator
 import re
 import statistics
 import subprocess
 import sys
-from typing import Callable, Iterable, Mapping, Sequence
+from typing import Callable, Iterable, List, Mapping, Sequence, Union
 
 
 @dataclass(frozen=True, order=True)
 class BenchParams:
     """Parameters of an individual stockfish bench run."""
-    threads: int
-    tt_size_mb: int
-    depth: int
+    threads: Union[int, float]
+    tt_size_mb: Union[int, float]
+    depth: Union[int, float]
+
+
+@dataclass(frozen=True)
+class BenchResult:
+    nps: int
+    nodes_searched: int
+    total_time_ms: int
+
+RESULT_KEYS = {
+    'Nodes/second': 'nps',
+    'Nodes searched': 'nodes_searched',
+    'Total time (ms)': 'total_time_ms',
+}
 
 
 @dataclass(frozen=True)
@@ -43,7 +57,7 @@ class SeriesParams:
     max_failures_to_improve: int
 
 
-def run_benchmark(stockfish_binary: str, params: BenchParams) -> Mapping[str, int]:
+def run_benchmark(stockfish_binary: str, params: BenchParams) -> BenchResult:
     print(f'Running {stockfish_binary} bench with {params}...', file=sys.stderr)
     output = subprocess.check_output([
         stockfish_binary, 'bench',
@@ -51,15 +65,35 @@ def run_benchmark(stockfish_binary: str, params: BenchParams) -> Mapping[str, in
         str(params.threads),    # threads
         str(params.depth),      # limit
     ], stderr=subprocess.STDOUT, encoding='utf8')
-    lines = output.splitlines()
-    result = {}
-    for line in reversed(lines):
+    vals = {}
+    for line in reversed(output.splitlines()):
         m = re.match(r'([^:]+\S)\s*:\s+(\d+)', line)
         if not m:
             break
-        result[m.group(1)] = int(m.group(2))
+        (key, val) = (m.group(1), int(m.group(2)))
+        vals[RESULT_KEYS[key]] = val
+    result = BenchResult(**vals)
     print(f'Run complete: {result}')
     return result
+
+
+def get_average_result(results: Sequence[BenchResult]) -> BenchResult:
+    average_values = {f.name: statistics.mean(getattr(r, f.name) for r in results)
+                      for f in dataclasses.fields(results[0])}
+    return BenchResult(**average_values)
+
+
+def has_improvement(result: BenchResult, best_so_far: BenchResult) -> bool:
+    return (result.nps > best_so_far.nps or
+            result.nodes_searched > best_so_far.nodes_searched or
+            result.total_time_ms < best_so_far.total_time_ms)
+
+
+def get_best_values(result1: BenchResult, result2: BenchResult) -> BenchResult:
+    return BenchResult(
+        nps=max(result1.nps, result2.nps),
+        nodes_searched=max(result1.nodes_searched, result2.nodes_searched),
+        total_time_ms=min(result1.total_time_ms, result2.total_time_ms))
 
 
 def run_series(
@@ -67,22 +101,22 @@ def run_series(
     series_params: SeriesParams,
     force_continue: Callable[[BenchParams], bool],
     params_seq: Iterable[BenchParams],
-) -> Mapping[BenchParams, Sequence[int]]:
-    results = collections.defaultdict(list)
-    best_average = 0
+) -> Mapping[BenchParams, Sequence[BenchResult]]:
+    results: Mapping[BenchParams, List[BenchResult]] = collections.defaultdict(list)
+    best_values = BenchResult(nps=0, nodes_searched=0, total_time_ms=1000000000000)
     failures_to_improve = 0
     for params in params_seq:
         while len(results[params]) < series_params.repetitions:
             result = run_benchmark(stockfish_binary, params)
-            results[params].append(result['Nodes/second'])
-        average = statistics.mean(results[params])
-        if average > best_average:
+            results[params].append(result)
+        average = get_average_result(results[params])
+        if has_improvement(average, best_values):
             failures_to_improve = 0
-            print(f'Average {average:,.1f} is an improvement on best {best_average:,.1f}', file=sys.stderr)
-            best_average = average
+            print(f'Average {average} has an improvement on best {best_values}', file=sys.stderr)
+            best_values = get_best_values(average, best_values)
         else:
             failures_to_improve += 1
-            print(f'Average {average:,.1f} is not an improvement on best {best_average:,.1f}: failures={failures_to_improve}', file=sys.stderr)
+            print(f'Average {average} has no improvement on best {best_values}: failures={failures_to_improve}', file=sys.stderr)
             if not force_continue(params) and failures_to_improve >= series_params.max_failures_to_improve:
                 break
 
@@ -95,7 +129,7 @@ def run_varying_threads(
     tt_size_mb: int,
     series_params: SeriesParams,
     min_final_threads: int,
-) -> Mapping[BenchParams, Sequence[int]]:
+) -> Mapping[BenchParams, Sequence[BenchResult]]:
     def force_continue(params: BenchParams):
         return params.threads < min_final_threads
 
@@ -113,7 +147,7 @@ def run_varying_ttsize(
     depth: int,
     threads: int,
     series_params: SeriesParams,
-) -> Mapping[BenchParams, Sequence[int]]:
+) -> Mapping[BenchParams, Sequence[BenchResult]]:
     # Start with the default and increase by 2x each time
     hash_sizes = itertools.accumulate(itertools.repeat(2), func=operator.mul, initial=16)
     return run_series(
@@ -124,15 +158,19 @@ def run_varying_ttsize(
     )
 
 
-def print_results(machine_type: str, results: Mapping[BenchParams, Sequence[int]]):
+def print_results(machine_type: str, results: Mapping[BenchParams, Sequence[BenchResult]]):
     w = csv.writer(sys.stdout)
-    header = ['MachineType', 'Threads', 'TTSizeMb', 'Depth', 'MeanNPS']
-    header.extend(f'Run{i}NPS' for i in range(1, len(next(iter(results.values())))+1))
+    header = ['MachineType', 'Threads', 'TTSizeMb', 'Depth', 'MeanNPS', 'MeanTotalTimeMS', 'MeanNodesSearched']
+    for i in range(1, len(next(iter(results.values()))) + 1):
+        header.extend([f'Run{i}NPS', f'Run{i}TotalTimeMS', f'Run{i}NodesSearched'])
     w.writerow(header)
-    for (params, nps_results) in sorted(results.items()):
-        row = [machine_type, params.threads, params.tt_size_mb, params.depth]
-        row.append(statistics.mean(nps_results))
-        row.extend(nps_results)
+    for params in sorted(results.keys()):
+        params_results = results[params]
+        average_results = get_average_result(params_results)
+        row = [machine_type, params.threads, params.tt_size_mb, params.depth,
+               average_results.nps, average_results.total_time_ms, average_results.nodes_searched]
+        for result in params_results:
+            row.extend([result.nps, result.total_time_ms, result.nodes_searched])
         w.writerow(row)
 
 
