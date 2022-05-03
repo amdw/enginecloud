@@ -52,14 +52,25 @@ Some observations:
   threads is equal to the number of CPUs the VM has: the 8-core `c2-standard-8`
   peaks around 8 threads, the 16-core `c2-standard-16` peaks around 16 threads,
   and so on. This is much as we would intuitively expect.
-* The performance increases roughly linearly with the number of cores. There is
-  some variation between the machine types, and the effect of additional cores
-  tends to drop as we move towards saturation, but the peak for each machine
-  type is remarkably consistent at around 1M to 1.2M per core: the 8-core peaks
-  around 9M, the 16-core around 19M, the 30-core around 33M, the 60-core around
-  65M and so on. If you want to breach that magic 100M barrier, you have to go
-  to 96 or 128 cores. I didn't try shapes larger than 128 cores; the 128-core
-  ones peaked around 128M.
+* The performance increases roughly linearly with the number of cores.
+  * There is some variation between the machine types, and the effect of
+    additional cores tends to drop as we move towards saturation, but the peak
+    for each machine type is remarkably consistent at around 1M to 1.2M per
+    core: the 8-core peaks around 9M, the 16-core around 19M, the 30-core around
+    33M, the 60-core around 65M and so on.
+  * If you want to breach that magic 100M barrier, you have to go to 96 or 128
+    cores. I didn't try shapes larger than 128 cores; the 128-core ones peaked
+    around 128M.
+  * As a sanity check, we can compare these numbers to what Stockfish 15
+    achieved in [the TCEC Season 22
+    Superfinal](https://tcec-chess.com/#div=sf&game=1&season=22); if you click
+    into games and then the "Speed" graph, you see that speeds around the 70-90
+    MNPS range are common, so we are in roughly the right ballpark here.
+  * From hovering over the kings next to the engine names, you can see Stockfish
+    used 101 threads in that match; I believe [the system
+    used](https://wiki.chessdom.org/TCEC_Season_Further_information#TCEC_all_in_one_box_server_since_after_S21_superfinal)
+    was 52-core with hyperthreading, which may explain the slightly lower
+    performance per core.
 * The type of CPU doesn't make a huge difference. There aren't sufficiently
   clear and consistent variations between, say, the Intel-based `n2` shapes and
   the AMD `n2d` ones that would make me say one is clearly better than the
