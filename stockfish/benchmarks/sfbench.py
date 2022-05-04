@@ -106,9 +106,17 @@ def run_series(
     best_values = BenchResult(nps=0, nodes_searched=0, total_time_ms=1000000000000)
     failures_to_improve = 0
     for params in params_seq:
+        failure = False
         while len(results[params]) < series_params.repetitions:
-            result = run_benchmark(stockfish_binary, params)
-            results[params].append(result)
+            try:
+                result = run_benchmark(stockfish_binary, params)
+                results[params].append(result)
+            except subprocess.CalledProcessError as e:
+                failure = True
+                print(f'Run failed: {e}', file=sys.stderr)
+                break
+        if failure:
+            break
         average = get_average_result(results[params])
         if has_improvement(average, best_values):
             failures_to_improve = 0
@@ -165,12 +173,13 @@ def print_results(machine_type: str, results: Mapping[BenchParams, Sequence[Benc
         header.extend([f'Run{i}NPS', f'Run{i}TotalTimeMS', f'Run{i}NodesSearched'])
     w.writerow(header)
     for params in sorted(results.keys()):
+        row = [machine_type, params.threads, params.tt_size_mb, params.depth]
         params_results = results[params]
-        average_results = get_average_result(params_results)
-        row = [machine_type, params.threads, params.tt_size_mb, params.depth,
-               average_results.nps, average_results.total_time_ms, average_results.nodes_searched]
-        for result in params_results:
-            row.extend([result.nps, result.total_time_ms, result.nodes_searched])
+        if params_results:
+            average_results = get_average_result(params_results)
+            row.extend([average_results.nps, average_results.total_time_ms, average_results.nodes_searched])
+            for result in params_results:
+                row.extend([result.nps, result.total_time_ms, result.nodes_searched])
         w.writerow(row)
 
 
