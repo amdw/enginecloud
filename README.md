@@ -265,9 +265,7 @@ billable resources.)**
 
 Once `start.sh` completes successfully, you can test the VM by running the
 `run_stockfish` program from the shell; if you see the Stockfish welcome
-message, you should be good to go. Sometimes you have to try it a few times
-before it succeeds, as it will take the VM a few seconds to download and unpack
-Stockfish after it starts up. (If it doesn't work, `stockfish/ssh.sh` is a
+message, you should be good to go. (If it doesn't work, `stockfish/ssh.sh` is a
 convenient way to invoke SSH to help you debug.)
 
 Once this works, open your chess GUI of choice, and configure it with a new
