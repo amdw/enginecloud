@@ -64,10 +64,6 @@ accidentally spending more than you intended.
 
 ## Why?
 
-Computer chess engines are indispensable tools for learning about the game. For
-example, analysing your own games with an engine is a fascinating and sobering
-experience, as they show you many possibilities missed by one or both players!
-
 Computer hardware and chess software have advanced to the point where even a
 mobile phone, or an engine compiled to JavaScript and run in a web browser such
 as the Stockfish version used in [the Lichess analysis
