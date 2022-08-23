@@ -253,6 +253,13 @@ You should also check the other environment variables:
   image](https://cloud.google.com/compute/docs/images) used to create your VM.
 * `GCP_INSTANCE_NAME`: the name of the VM instance that will be created for
   Stockfish inside your project.
+* `SELF_DELETE_TIME`: a time after which the VM instance will delete itself.
+  This is designed as a protection against accidentally forgetting to delete the
+  VM and running up a larger-than-expected bill: set this to the maximum time
+  you want to be able to use the VM for, and it will delete itself, along with
+  its local disk, after that time (without warning). If blank or unset, the VM
+  will not delete itself; otherwise, a value suitable as a parameter to the
+  `sleep` command is expected.
 
 Once you are happy, you can run `stockfish/start.sh`. This will generate and
 compile a Go program at `$EC_HOME/run_stockfish` to connect to your VM and run
