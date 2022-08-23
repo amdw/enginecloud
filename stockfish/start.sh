@@ -71,7 +71,7 @@ gcloud compute instances create $GCP_INSTANCE_NAME \
         chown ${SSH_USER}:${SSH_USER} -R /tmp/stockfish && \
         git clone https://github.com/amdw/enginecloud.git /home/${SSH_USER}/enginecloud && \
         chown ${SSH_USER}:${SSH_USER} -R /home/${SSH_USER}/enginecloud && \
-		/home/${SSH_USER}/enginecloud/self-delete.sh"
+		/home/${SSH_USER}/enginecloud/self-delete.sh $SELF_DELETE_TIME"
 
 echo "Virtual machine has been created and should now be consuming billable resources."
 
