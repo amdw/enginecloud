@@ -274,7 +274,7 @@ def main():
     if args.quick:
         print(f'CPU Platform: {machine_info.cpu_platform}; CPU info: {machine_info.cpu_info}')
         result = run_benchmark(args.stockfish_binary, BenchParams(threads=machine_info.vcpu_count, tt_size_mb=args.tt_size_mb, depth=args.depth))
-        print(f'Result with {machine_info.vcpu_count} threads: {result.nps:,.1f} nps ({result.nps / machine_info.vcpu_count:,.1f} nps per vCPU)')
+        print(f'Stockfish benchmark with {machine_info.vcpu_count} threads: {result.nps:,.1f} nps ({result.nps / machine_info.vcpu_count:,.1f} nps per vCPU)')
         return
 
     series_params = SeriesParams(repetitions=args.repetitions, max_failures_to_improve=args.max_failures_to_improve)

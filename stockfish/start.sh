@@ -75,7 +75,7 @@ gcloud compute instances create $GCP_INSTANCE_NAME \
 
 echo "Virtual machine has been created and should now be consuming billable resources."
 
-until gcloud compute ssh --zone $GCP_ZONE $GCP_INSTANCE_NAME --project $GCP_PROJECT --command "ls -l /tmp/stockfish/stockfish" --quiet 2>/dev/null
+until gcloud compute ssh --zone $GCP_ZONE $GCP_INSTANCE_NAME --project $GCP_PROJECT --command "/home/${SSH_USER}/enginecloud/stockfish/benchmarks/sfbench.py --quick" --quiet 2>/dev/null
 do
 	echo "Waiting for machine to be ready..."
 	sleep 5
