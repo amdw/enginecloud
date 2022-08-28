@@ -77,7 +77,7 @@ echo "Virtual machine has been created and should now be consuming billable reso
 
 until gcloud compute ssh --zone $GCP_ZONE $GCP_INSTANCE_NAME --project $GCP_PROJECT --command "ls -l /tmp/stockfish/stockfish" --quiet 2>/dev/null
 do
-	echo "Waiting for machine to be ready for SSH..."
+	echo "Waiting for machine to be ready..."
 	sleep 5
 done
 echo "Virtual machine is ready for use!"
