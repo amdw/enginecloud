@@ -237,12 +237,15 @@ def get_cpu_info() -> CPUInfo:
     cores = set()
     physicals = set()
     models: MutableMapping[str, int] = collections.defaultdict(int)
+    last_model = None
     with open('/proc/cpuinfo') as f:
         for line in f:
             if m := re.match(r'processor\s*:\s*(\d+)', line):
                 processors.add(int(m.group(1)))
             elif m := re.match(r'model name\s*:\s*(.*)', line):
-                models[m.group(1)] += 1
+                last_model = m.group(1)
+            elif m := re.match(r'cpu MHz\s*:\s*([\d.]+)', line):
+                models[f'{last_model} ({m.group(1)} MHz)'] += 1
             elif m := re.match(r'physical id\s*:\s*(\d+)', line):
                 physicals.add(int(m.group(1)))
             elif m := re.match(r'core id\s*:\s*(\d+)', line):
