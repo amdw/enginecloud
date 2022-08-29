@@ -21,6 +21,7 @@ import dataclasses
 from datetime import datetime, timezone
 import itertools
 import operator
+import os.path
 import re
 import statistics
 import subprocess
@@ -97,7 +98,7 @@ def get_best_values(result1: BenchResult, result2: BenchResult) -> BenchResult:
         nps=max(result1.nps, result2.nps),
         nodes_searched=max(result1.nodes_searched, result2.nodes_searched),
         total_time_ms=min(result1.total_time_ms, result2.total_time_ms),
-        time=max(result1.time, result2.time))
+        time=result1.time if result1.nps > result2.nps else result2.time)
 
 
 def run_series(
@@ -189,9 +190,18 @@ class MachineInfo:
     zone: str
 
 
-def print_results(machine_info: MachineInfo, results: Mapping[BenchParams, Sequence[BenchResult]]):
+@dataclass(frozen=True)
+class StockfishInfo:
+    binary: str
+    version: str
+    compiler: str
+    compilation_settings: str
+
+
+def print_results(machine_info: MachineInfo, stockfish_info: StockfishInfo, results: Mapping[BenchParams, Sequence[BenchResult]]):
     w = csv.writer(sys.stdout)
     header = [
+        'StockfishBinary', 'StockfishVersion', 'StockfishCompiler', 'StockfishCompilationSettings',
         'MachineType', 'VCpuCount', 'CpuPlatform', 'CpuProcessors', 'CpuCores', 'CpuPhysicals', 'CpuModels', 'InstanceID', 'Image', 'Zone',
         'Threads', 'TTSizeMb', 'Depth', 'MeanNPS', 'MeanTotalTimeMS', 'MeanNodesSearched']
     for i in range(1, len(next(iter(results.values()))) + 1):
@@ -199,6 +209,7 @@ def print_results(machine_info: MachineInfo, results: Mapping[BenchParams, Seque
     w.writerow(header)
     for params in sorted(results.keys()):
         row = [
+            stockfish_info.binary, stockfish_info.version, stockfish_info.compiler, stockfish_info.compilation_settings,
             machine_info.machine_type, machine_info.vcpu_count, machine_info.cpu_platform,
             machine_info.cpu_info.processors, machine_info.cpu_info.cores, machine_info.cpu_info.physicals, machine_info.cpu_info.models,
             machine_info.instance_id, machine_info.image, machine_info.zone,
@@ -258,6 +269,20 @@ def get_machine_info() -> MachineInfo:
     )
 
 
+def get_stockfish_info(binary: str) -> StockfishInfo:
+    real_path = os.path.realpath(binary)
+    compiler_output = subprocess.check_output([binary, 'compiler'], encoding='utf8')
+    parts = {}
+    for line in compiler_output.splitlines():
+        if m := re.match(r'Stockfish ([\d.-]+)', line):
+            parts['version'] = m.group(1)
+        elif m := re.match(r'Compiled by (.*)', line):
+            parts['compiler'] = m.group(1)
+        elif m := re.match(r'Compilation settings include:\s+(.*)', line):
+            parts['compilation_settings'] = m.group(1)
+    return StockfishInfo(binary=os.path.basename(real_path), **parts)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('stockfish_binary', default='/tmp/stockfish/stockfish', nargs='?')
@@ -271,7 +296,9 @@ def main():
     args = parser.parse_args()
 
     machine_info = get_machine_info()
+    stockfish_info = get_stockfish_info(args.stockfish_binary)
     if args.quick:
+        print(f'Stockfish: {stockfish_info}')
         print(f'CPU Platform: {machine_info.cpu_platform}; CPU info: {machine_info.cpu_info}')
         result = run_benchmark(args.stockfish_binary, BenchParams(threads=machine_info.vcpu_count, tt_size_mb=args.tt_size_mb, depth=args.depth))
         print(f'Stockfish benchmark with {machine_info.vcpu_count} threads: {result.nps:,.1f} nps ({result.nps / machine_info.vcpu_count:,.1f} nps per vCPU)')
@@ -289,7 +316,7 @@ def main():
     else:
         raise ValueError(f'Unsupported test_varying {args.test_varying}')
 
-    print_results(machine_info, results)
+    print_results(machine_info, stockfish_info, results)
 
 
 if __name__ == '__main__':
