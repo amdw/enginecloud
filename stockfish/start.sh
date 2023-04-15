@@ -73,11 +73,11 @@ gcloud compute instances create $GCP_INSTANCE_NAME \
         chown ${SSH_USER}:${SSH_USER} -R /home/${SSH_USER}/enginecloud && \
 		/home/${SSH_USER}/enginecloud/self-delete.sh $SELF_DELETE_TIME"
 
-echo "Virtual machine has been created and should now be consuming billable resources."
+echo "`date`: Virtual machine has been created and should now be consuming billable resources."
 
 until gcloud compute ssh --zone $GCP_ZONE $GCP_INSTANCE_NAME --project $GCP_PROJECT --command "/home/${SSH_USER}/enginecloud/stockfish/benchmarks/sfbench.py --quick" --quiet 2>/dev/null
 do
 	echo "Waiting for machine to be ready..."
 	sleep 5
 done
-echo "Virtual machine is ready for use!"
+echo "`date`: Virtual machine is ready for use!"
