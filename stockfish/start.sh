@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2022 Andrew Medworth
+# Copyright 2022-2023 Andrew Medworth
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -56,13 +56,19 @@ func main() {
 EOF
 ( cd $EC_HOME && go build run_stockfish.go ) && echo "Built $EC_HOME/run_stockfish"
 
-gcloud compute instances create $GCP_INSTANCE_NAME \
+if [ ! -z $MAX_RUN_DURATION ]; then
+	MAX_RUN_DURATION_FLAGS="--max-run-duration $MAX_RUN_DURATION --instance-termination-action DELETE"
+fi
+
+# TODO: Remove "beta" once --max-run-duration is in the GA gcloud
+gcloud beta compute instances create $GCP_INSTANCE_NAME \
     --project $GCP_PROJECT \
     --zone $GCP_ZONE \
     --machine-type $GCP_MACHINE_TYPE \
     --image-project $GCP_IMAGE_PROJECT \
     --image-family $GCP_IMAGE_FAMILY \
-	--scopes=compute-rw \
+	--provisioning-model $PROVISIONING_MODEL \
+	$MAX_RUN_DURATION_FLAGS \
     --metadata=startup-script="sudo apt-get install -y unzip git && \
         curl -L -o /tmp/stockfish.zip https://stockfishchess.org/files/${STOCKFISH_VERSION}.zip && \
         unzip /tmp/stockfish.zip -d /tmp/stockfish && \
@@ -70,8 +76,7 @@ gcloud compute instances create $GCP_INSTANCE_NAME \
         ln -s /tmp/stockfish/${STOCKFISH_VERSION}/${STOCKFISH_BINARY} /tmp/stockfish/stockfish && \
         chown ${SSH_USER}:${SSH_USER} -R /tmp/stockfish && \
         git clone https://github.com/amdw/enginecloud.git /home/${SSH_USER}/enginecloud && \
-        chown ${SSH_USER}:${SSH_USER} -R /home/${SSH_USER}/enginecloud && \
-		/home/${SSH_USER}/enginecloud/self-delete.sh $SELF_DELETE_TIME"
+        chown ${SSH_USER}:${SSH_USER} -R /home/${SSH_USER}/enginecloud"
 
 echo "`date`: Virtual machine has been created and should now be consuming billable resources."
 
