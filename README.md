@@ -253,13 +253,22 @@ You should also check the other environment variables:
   image](https://cloud.google.com/compute/docs/images) used to create your VM.
 * `GCP_INSTANCE_NAME`: the name of the VM instance that will be created for
   Stockfish inside your project.
-* `SELF_DELETE_TIME`: a time after which the VM instance will delete itself.
-  This is designed as a protection against accidentally forgetting to delete the
-  VM and running up a larger-than-expected bill: set this to the maximum time
-  you want to be able to use the VM for, and it will delete itself, along with
-  its local disk, after that time (without warning). If blank or unset, the VM
-  will not delete itself; otherwise, a value suitable as a parameter to the
-  `sleep` command is expected.
+* `PROVISIONING_MODEL`: the GCE provisioning model to use for your VMs.
+  `STANDARD` is more expensive but more reliable; `SPOT` is cheaper but your VM
+  may be deleted arbitrarily. See [this
+  guide](https://cloud.google.com/compute/docs/instances/create-use-spot) for
+  more information and [this
+  reference](https://cloud.google.com/sdk/gcloud/reference/compute/instances/create)
+  for possible values of the variable.
+* `MAX_RUN_DURATION`: a time after which the VM instance will be deleted. This
+  is designed as a protection against accidentally forgetting to delete the VM
+  and running up a larger-than-expected bill: set this to the maximum time you
+  want to be able to use the VM for, and it will delete itself, along with its
+  local disk, after that time (without warning). If blank or unset, the VM will
+  not delete itself; otherwise, a value suitable for [`gcloud`'s
+  `--max-run-duration`
+  flag](https://cloud.google.com/compute/docs/instances/limit-vm-runtime) is
+  expected.
 
 Once you are happy, you can run `stockfish/start.sh`. This will generate and
 compile a Go program at `$EC_HOME/run_stockfish` to connect to your VM and run
