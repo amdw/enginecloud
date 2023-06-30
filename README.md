@@ -246,8 +246,8 @@ You should also check the other environment variables:
   By default, `$HOME/enginecloud` will be used. I recommend using a directory
   dedicated to this project, which does not contain any other files you care
   about, as several scripts will write files here.
-* `STOCKFISH_VERSION`, `STOCKFISH_BINARY`: the version of Stockfish that will be
-  downloaded and used, and the filename of the Stockfish binary within the
+* `STOCKFISH_URL`, `STOCKFISH_BINARY_PATH`: the version of Stockfish that will be
+  downloaded and used, and the path to the Stockfish binary within the
   downloaded archive.
 * `GCP_IMAGE_PROJECT` and `GCP_IMAGE_FAMILY`: these determine [the OS
   image](https://cloud.google.com/compute/docs/images) used to create your VM.
