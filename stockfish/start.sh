@@ -62,21 +62,21 @@ fi
 
 # TODO: Remove "beta" once --max-run-duration is in the GA gcloud
 gcloud beta compute instances create $GCP_INSTANCE_NAME \
-    --project $GCP_PROJECT \
-    --zone $GCP_ZONE \
-    --machine-type $GCP_MACHINE_TYPE \
-    --image-project $GCP_IMAGE_PROJECT \
-    --image-family $GCP_IMAGE_FAMILY \
+	--project $GCP_PROJECT \
+	--zone $GCP_ZONE \
+	--machine-type $GCP_MACHINE_TYPE \
+	--image-project $GCP_IMAGE_PROJECT \
+	--image-family $GCP_IMAGE_FAMILY \
 	--provisioning-model $PROVISIONING_MODEL \
 	$MAX_RUN_DURATION_FLAGS \
-    --metadata=startup-script="sudo apt-get install -y unzip git && \
-        curl -L -o /tmp/stockfish.zip https://stockfishchess.org/files/${STOCKFISH_VERSION}.zip && \
-        unzip /tmp/stockfish.zip -d /tmp/stockfish && \
-        chmod a+x /tmp/stockfish/${STOCKFISH_VERSION}/${STOCKFISH_BINARY} && \
-        ln -s /tmp/stockfish/${STOCKFISH_VERSION}/${STOCKFISH_BINARY} /tmp/stockfish/stockfish && \
-        chown ${SSH_USER}:${SSH_USER} -R /tmp/stockfish && \
-        git clone https://github.com/amdw/enginecloud.git /home/${SSH_USER}/enginecloud && \
-        chown ${SSH_USER}:${SSH_USER} -R /home/${SSH_USER}/enginecloud"
+	--metadata=startup-script="sudo apt-get install -y unzip git && \
+		curl -L -o /tmp/stockfish.zip https://stockfishchess.org/files/${STOCKFISH_VERSION}.zip && \
+		unzip /tmp/stockfish.zip -d /tmp/stockfish && \
+		chmod a+x /tmp/stockfish/${STOCKFISH_VERSION}/${STOCKFISH_BINARY} && \
+		ln -s /tmp/stockfish/${STOCKFISH_VERSION}/${STOCKFISH_BINARY} /tmp/stockfish/stockfish && \
+		chown ${SSH_USER}:${SSH_USER} -R /tmp/stockfish && \
+		git clone https://github.com/amdw/enginecloud.git /home/${SSH_USER}/enginecloud && \
+		chown ${SSH_USER}:${SSH_USER} -R /home/${SSH_USER}/enginecloud"
 
 echo "`date`: Virtual machine has been created and should now be consuming billable resources."
 
