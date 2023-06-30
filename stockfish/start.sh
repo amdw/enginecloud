@@ -26,7 +26,7 @@ source stockfish/settings.sh
 
 if ! [[ -e $EC_HOME ]]; then mkdir $EC_HOME; fi
 
-# We will create a symlink at this location pointing to the Stockfish binary
+# We will create a symlink on the VM at this location pointing to the Stockfish binary
 STOCKFISH_BINARY_LINK="/tmp/stockfish"
 
 cat > ${EC_HOME}/run_stockfish.go <<EOF
@@ -69,7 +69,7 @@ STOCKFISH_EXTRACT_DIR=/tmp/sfextract
 case $STOCKFISH_EXT in
 	"zip") STOCKFISH_EXTRACT_COMMAND="unzip $STOCKFISH_DOWNLOAD_TO -d $STOCKFISH_EXTRACT_DIR" ;;
 	"tar") STOCKFISH_EXTRACT_COMMAND="mkdir -p $STOCKFISH_EXTRACT_DIR && tar -xf $STOCKFISH_DOWNLOAD_TO -C $STOCKFISH_EXTRACT_DIR" ;;
-	*) echo "Unsupported file extension $STOCKFISH_EXT" ; exit 1 ;;
+	*) echo "Unsupported file type $STOCKFISH_EXT" ; exit 1 ;;
 esac
 
 # TODO: Remove "beta" once --max-run-duration is in the GA gcloud
