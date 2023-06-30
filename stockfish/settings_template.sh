@@ -1,7 +1,7 @@
 EC_HOME=$HOME/enginecloud
 SSH_USER=$USER
-STOCKFISH_VERSION="stockfish_15.1_linux_x64_bmi2"
-STOCKFISH_BINARY="stockfish_15.1_x64_bmi2"
+STOCKFISH_URL="https://github.com/official-stockfish/Stockfish/releases/download/sf_16/stockfish-ubuntu-x86-64-avx2.tar"
+STOCKFISH_BINARY_PATH="stockfish/stockfish-ubuntu-x86-64-avx2"
 
 GCP_PROJECT=
 GCP_ZONE=
@@ -11,7 +11,7 @@ GCP_IMAGE_PROJECT=ubuntu-os-cloud
 GCP_IMAGE_FAMILY=ubuntu-2204-lts
 GCP_INSTANCE_NAME=stockfish
 # See https://cloud.google.com/compute/docs/instances/spot
-PROVISIONING_MODEL=STANDARD
+PROVISIONING_MODEL=SPOT
 
 # Delay after which the VM should delete itself.
 # Set this to the maximum time you want to use the VM for:

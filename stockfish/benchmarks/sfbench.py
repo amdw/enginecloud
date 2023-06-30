@@ -288,7 +288,7 @@ def get_stockfish_info(binary: str) -> StockfishInfo:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('stockfish_binary', default='/tmp/stockfish/stockfish', nargs='?')
+    parser.add_argument('stockfish_binary')
     parser.add_argument('--depth', type=int, default=14)
     parser.add_argument('--threads', type=int, default=0)
     parser.add_argument('--tt_size_mb', type=int, default=16)

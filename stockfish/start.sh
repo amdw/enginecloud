@@ -26,6 +26,9 @@ source stockfish/settings.sh
 
 if ! [[ -e $EC_HOME ]]; then mkdir $EC_HOME; fi
 
+# We will create a symlink at this location pointing to the Stockfish binary
+STOCKFISH_BINARY_LINK="/tmp/stockfish"
+
 cat > ${EC_HOME}/run_stockfish.go <<EOF
 package main
 
@@ -40,7 +43,7 @@ func main() {
 		"`which gcloud`", "compute", "ssh",
 		"--zone", "${GCP_ZONE}",
 		"${GCP_INSTANCE_NAME}", "--project", "${GCP_PROJECT}",
-		\`--command="/tmp/stockfish/stockfish"\`,
+		\`--command="${STOCKFISH_BINARY_LINK}"\`,
 		"--quiet")
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -60,6 +63,15 @@ if [ ! -z $MAX_RUN_DURATION ]; then
 	MAX_RUN_DURATION_FLAGS="--max-run-duration $MAX_RUN_DURATION --instance-termination-action DELETE"
 fi
 
+STOCKFISH_EXT="${STOCKFISH_URL##*.}"
+STOCKFISH_DOWNLOAD_TO="/tmp/stockfish.$STOCKFISH_EXT"
+STOCKFISH_EXTRACT_DIR=/tmp/sfextract
+case $STOCKFISH_EXT in
+	"zip") STOCKFISH_EXTRACT_COMMAND="unzip $STOCKFISH_DOWNLOAD_TO -d $STOCKFISH_EXTRACT_DIR" ;;
+	"tar") STOCKFISH_EXTRACT_COMMAND="mkdir -p $STOCKFISH_EXTRACT_DIR && tar -xf $STOCKFISH_DOWNLOAD_TO -C $STOCKFISH_EXTRACT_DIR" ;;
+	*) echo "Unsupported file extension $STOCKFISH_EXT" ; exit 1 ;;
+esac
+
 # TODO: Remove "beta" once --max-run-duration is in the GA gcloud
 gcloud beta compute instances create $GCP_INSTANCE_NAME \
 	--project $GCP_PROJECT \
@@ -70,17 +82,17 @@ gcloud beta compute instances create $GCP_INSTANCE_NAME \
 	--provisioning-model $PROVISIONING_MODEL \
 	$MAX_RUN_DURATION_FLAGS \
 	--metadata=startup-script="sudo apt-get install -y unzip git && \
-		curl -L -o /tmp/stockfish.zip https://stockfishchess.org/files/${STOCKFISH_VERSION}.zip && \
-		unzip /tmp/stockfish.zip -d /tmp/stockfish && \
-		chmod a+x /tmp/stockfish/${STOCKFISH_VERSION}/${STOCKFISH_BINARY} && \
-		ln -s /tmp/stockfish/${STOCKFISH_VERSION}/${STOCKFISH_BINARY} /tmp/stockfish/stockfish && \
-		chown ${SSH_USER}:${SSH_USER} -R /tmp/stockfish && \
+		curl -L -o $STOCKFISH_DOWNLOAD_TO $STOCKFISH_URL && \
+		$STOCKFISH_EXTRACT_COMMAND && \
+		chmod a+x ${STOCKFISH_EXTRACT_DIR}/${STOCKFISH_BINARY_PATH} && \
+		ln -s ${STOCKFISH_EXTRACT_DIR}/${STOCKFISH_BINARY_PATH} $STOCKFISH_BINARY_LINK && \
+		chown ${SSH_USER}:${SSH_USER} -R $STOCKFISH_BINARY_LINK $STOCKFISH_EXTRACT_DIR && \
 		git clone https://github.com/amdw/enginecloud.git /home/${SSH_USER}/enginecloud && \
 		chown ${SSH_USER}:${SSH_USER} -R /home/${SSH_USER}/enginecloud"
 
 echo "`date`: Virtual machine has been created and should now be consuming billable resources."
 
-until gcloud compute ssh --zone $GCP_ZONE $GCP_INSTANCE_NAME --project $GCP_PROJECT --command "/home/${SSH_USER}/enginecloud/stockfish/benchmarks/sfbench.py --quick" --quiet 2>/dev/null
+until gcloud compute ssh --zone $GCP_ZONE $GCP_INSTANCE_NAME --project $GCP_PROJECT --command "/home/${SSH_USER}/enginecloud/stockfish/benchmarks/sfbench.py $STOCKFISH_BINARY_LINK --quick" --quiet 2>/dev/null
 do
 	echo "Waiting for machine to be ready..."
 	sleep 5
