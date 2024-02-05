@@ -81,7 +81,8 @@ gcloud beta compute instances create $GCP_INSTANCE_NAME \
 	--image-family $GCP_IMAGE_FAMILY \
 	--provisioning-model $PROVISIONING_MODEL \
 	$MAX_RUN_DURATION_FLAGS \
-	--metadata=startup-script="sudo apt-get install -y unzip git && \
+	--metadata=startup-script="sudo apt-get update && \
+		sudo apt-get install -y unzip git && \
 		curl -L -o $STOCKFISH_DOWNLOAD_TO $STOCKFISH_URL && \
 		$STOCKFISH_EXTRACT_COMMAND && \
 		chmod a+x ${STOCKFISH_EXTRACT_DIR}/${STOCKFISH_BINARY_PATH} && \
