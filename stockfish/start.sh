@@ -72,6 +72,8 @@ case $STOCKFISH_EXT in
 	*) echo "Unsupported file type $STOCKFISH_EXT" ; exit 1 ;;
 esac
 
+echo "`date`: Creating virtual machine..."
+
 # TODO: Remove "beta" once --max-run-duration is in the GA gcloud
 gcloud beta compute instances create $GCP_INSTANCE_NAME \
 	--project $GCP_PROJECT \
