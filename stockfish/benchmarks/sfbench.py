@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2022 Andrew Medworth
+# Copyright 2022-2024 Andrew Medworth
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -281,7 +281,7 @@ def get_stockfish_info(binary: str) -> StockfishInfo:
             parts['version'] = m.group(1)
         elif m := re.match(r'Compiled by (.*)', line):
             parts['compiler'] = m.group(1)
-        elif m := re.match(r'Compilation settings include:\s+(.*)', line):
+        elif m := re.match(r'Compilation settings[^:]*:\s+(.*)', line):
             parts['compilation_settings'] = m.group(1)
     return StockfishInfo(binary=os.path.basename(real_path), **parts)
 

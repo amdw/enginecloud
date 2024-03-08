@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2022-2023 Andrew Medworth
+# Copyright 2022-2024 Andrew Medworth
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ gcloud beta compute instances create $GCP_INSTANCE_NAME \
 	$MAX_RUN_DURATION_FLAGS \
 	--metadata=startup-script="sudo apt-get update && \
 		sudo apt-get install -y unzip git && \
-		curl -L -o $STOCKFISH_DOWNLOAD_TO $STOCKFISH_URL && \
+		curl -sS -L -o $STOCKFISH_DOWNLOAD_TO $STOCKFISH_URL && \
 		$STOCKFISH_EXTRACT_COMMAND && \
 		chmod a+x ${STOCKFISH_EXTRACT_DIR}/${STOCKFISH_BINARY_PATH} && \
 		ln -s ${STOCKFISH_EXTRACT_DIR}/${STOCKFISH_BINARY_PATH} $STOCKFISH_BINARY_LINK && \
