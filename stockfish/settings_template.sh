@@ -1,12 +1,24 @@
 EC_HOME=$HOME/enginecloud
 SSH_USER=$USER
-STOCKFISH_URL="https://github.com/official-stockfish/Stockfish/releases/download/sf_16/stockfish-ubuntu-x86-64-avx2.tar"
-STOCKFISH_BINARY_PATH="stockfish/stockfish-ubuntu-x86-64-avx2"
+
+# See https://stockfishchess.org/download/linux/ for Stockfish binaries optimised for different platforms.
+
+# Works on c3d machine series but not n2d.
+STOCKFISH_URL="https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-ubuntu-x86-64-vnni512.tar"
+STOCKFISH_BINARY_PATH="stockfish/stockfish-ubuntu-x86-64-vnni512"
+
+# Fallback that works on n2d machine series.
+# STOCKFISH_URL="https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-ubuntu-x86-64-bmi2.tar"
+# STOCKFISH_BINARY_PATH="stockfish/stockfish-ubuntu-x86-64-bmi2"
 
 GCP_PROJECT=
 GCP_ZONE=
+# For available machine types in a zone, run:
+# gcloud compute machine-types list --filter="zone=(${GCP_ZONE})"
 GCP_MACHINE_TYPE=
+
 # Newer Stockfish binaries require newer libc versions hence relatively recent Ubuntu
+# gcloud compute images list | grep ubuntu
 GCP_IMAGE_PROJECT=ubuntu-os-cloud
 GCP_IMAGE_FAMILY=ubuntu-2204-lts
 GCP_INSTANCE_NAME=stockfish
