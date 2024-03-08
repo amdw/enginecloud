@@ -279,7 +279,7 @@ def get_stockfish_info(binary: str) -> StockfishInfo:
     for line in compiler_output.splitlines():
         if m := re.match(r'Stockfish ([\d.-]+)', line):
             parts['version'] = m.group(1)
-        elif m := re.match(r'Compiled by (.*)', line):
+        elif m := re.match(r'Compiled by[\s:]+(.*)', line):
             parts['compiler'] = m.group(1)
         elif m := re.match(r'Compilation settings[^:]*:\s+(.*)', line):
             parts['compilation_settings'] = m.group(1)
