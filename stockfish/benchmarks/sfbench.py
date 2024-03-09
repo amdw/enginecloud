@@ -67,7 +67,7 @@ class SeriesParams:
 
 
 def run_benchmark(stockfish_binary: str, params: BenchParams) -> BenchResult:
-    LOGGER.info(f'Running %s bench with %s...', stockfish_binary, params)
+    LOGGER.info('Running %s bench with %s...', stockfish_binary, params)
     output = subprocess.check_output([
         stockfish_binary, 'bench',
         str(params.tt_size_mb), # ttSize
