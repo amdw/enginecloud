@@ -6,11 +6,12 @@ name = "pypi"
 [packages]
 
 [dev-packages]
-plotly = "==5.7.0"
+plotly = "==5.19.0"
 jupyterlab = ">=3"
 ipywidgets = ">=7.6"
 pandas = "*"
 mypy = "*"
+pylint = "*"
 
 [requires]
 python_version = "3.11"

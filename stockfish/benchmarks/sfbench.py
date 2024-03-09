@@ -203,24 +203,19 @@ def print_results(machine_info: MachineInfo, stockfish_info: StockfishInfo, resu
     header = [
         'StockfishBinary', 'StockfishVersion', 'StockfishCompiler', 'StockfishCompilationSettings',
         'MachineType', 'VCpuCount', 'CpuPlatform', 'CpuProcessors', 'CpuCores', 'CpuPhysicals', 'CpuModels', 'InstanceID', 'Image', 'Zone',
-        'Threads', 'TTSizeMb', 'Depth', 'MeanNPS', 'MeanTotalTimeMS', 'MeanNodesSearched']
-    for i in range(1, len(next(iter(results.values()))) + 1):
-        header.extend([f'Run{i}Time', f'Run{i}NPS', f'Run{i}TotalTimeMS', f'Run{i}NodesSearched'])
+        'Threads', 'TTSizeMb', 'Depth', 'RunTime', 'NPS', 'TotalTimeMS', 'NodesSearched']
     w.writerow(header)
     for params in sorted(results.keys()):
-        row = [
+        params_values = [
             stockfish_info.binary, stockfish_info.version, stockfish_info.compiler, stockfish_info.compilation_settings,
             machine_info.machine_type, machine_info.vcpu_count, machine_info.cpu_platform,
             machine_info.cpu_info.processors, machine_info.cpu_info.cores, machine_info.cpu_info.physicals, machine_info.cpu_info.models,
             machine_info.instance_id, machine_info.image, machine_info.zone,
             params.threads, params.tt_size_mb, params.depth]
-        params_results = results[params]
-        if params_results:
-            average_results = get_average_result(params_results)
-            row.extend([average_results.nps, average_results.total_time_ms, average_results.nodes_searched])
-            for result in params_results:
-                row.extend([result.time.isoformat(), result.nps, result.total_time_ms, result.nodes_searched])
-        w.writerow(row)
+        for result in results[params]:
+            row = list(params_values)
+            row.extend([result.time.isoformat(), result.nps, result.total_time_ms, result.nodes_searched])
+            w.writerow(row)
 
 
 def get_metadata(path: str) -> str:
