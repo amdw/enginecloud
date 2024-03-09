@@ -118,11 +118,13 @@ fig.show()
 ```
 
 A previous version of this benchmark run with Stockfish 15 may be found below.
-Interestingly, the NPS values seen here are significantly lower. It's possible
-the benchmark is different between the two versions, but my experience using the
-engines suggests that NPS is simply lower in Stockfish 16.1 compared to
-Stockfish 15 (which is entirely compatible with 16.1 having a greater playing
-strength).
+Interestingly, the NPS values for the older Stockfish 15 are significantly
+higher.
+
+It's possible the benchmark is different between the two versions, but my
+experience using the engines suggests that NPS is simply lower in Stockfish 16.1
+compared to Stockfish 15 (which is entirely compatible with 16.1 having a
+greater playing strength).
 
 ![NPS benchmark for Stockfish 15](sfbenchgraph15.png)
 
