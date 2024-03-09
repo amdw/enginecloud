@@ -22,6 +22,7 @@ from dataclasses import dataclass
 import dataclasses
 from datetime import datetime, timezone
 import itertools
+import logging
 import operator
 import os.path
 import re
@@ -29,6 +30,8 @@ import statistics
 import subprocess
 import sys
 from typing import Any, Callable, Iterable, List, Mapping, MutableMapping, Sequence, Union
+
+LOGGER = logging.getLogger('sfbench')
 
 
 @dataclass(frozen=True, order=True)
@@ -64,7 +67,7 @@ class SeriesParams:
 
 
 def run_benchmark(stockfish_binary: str, params: BenchParams) -> BenchResult:
-    print(f'Running {stockfish_binary} bench with {params}...', file=sys.stderr)
+    LOGGER.info(f'Running %s bench with %s...', stockfish_binary, params)
     output = subprocess.check_output([
         stockfish_binary, 'bench',
         str(params.tt_size_mb), # ttSize
@@ -79,7 +82,7 @@ def run_benchmark(stockfish_binary: str, params: BenchParams) -> BenchResult:
         (key, val) = (m.group(1), int(m.group(2)))
         vals[RESULT_KEYS[key]] = val
     result = BenchResult(**vals)
-    print(f'Run complete: {result}', file=sys.stderr)
+    LOGGER.info('Run complete: %s', result)
     return result
 
 
@@ -121,18 +124,18 @@ def run_series(
                 results[params].append(result)
             except subprocess.CalledProcessError as e:
                 failure = True
-                print(f'Run failed: {e}', file=sys.stderr)
+                LOGGER.error('Run failed: %s', e)
                 break
         if failure:
             break
         average = get_average_result(results[params])
         if has_improvement(average, best_values):
             failures_to_improve = 0
-            print(f'Average {average} has an improvement on best {best_values}', file=sys.stderr)
+            LOGGER.info('Average %s has an improvement on best %s', average, best_values)
             best_values = get_best_values(average, best_values)
         else:
             failures_to_improve += 1
-            print(f'Average {average} has no improvement on best {best_values}: failures={failures_to_improve}', file=sys.stderr)
+            LOGGER.info('Average %s has no improvement on best %s: failures=%s', average, best_values, failures_to_improve)
             if not force_continue(params) and failures_to_improve >= series_params.max_failures_to_improve:
                 break
 
@@ -298,6 +301,9 @@ def main():
     parser.add_argument('--max_failures_to_improve', type=int, default=3)
     parser.add_argument('--quick', action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
+
+    logging.basicConfig(stream=sys.stderr, format='%(asctime)s %(levelname)-6s %(name)-8s: %(message)s',
+                        level=logging.INFO)
 
     machine_info = get_machine_info()
     stockfish_info = get_stockfish_info(args.stockfish_binary)
