@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Stockfish benchmark script."""
+
 import argparse
 import collections
 import csv
@@ -39,6 +41,7 @@ class BenchParams:
 
 @dataclass(frozen=True)
 class BenchResult:
+    """Result of a single benchmark run."""
     nps: int
     nodes_searched: int
     total_time_ms: int
@@ -173,6 +176,7 @@ def run_varying_ttsize(
 
 @dataclass(frozen=True)
 class CPUInfo:
+    """CPU information retrieved from /proc/cpuinfo."""
     processors: int
     cores: int
     physicals: int
@@ -181,6 +185,7 @@ class CPUInfo:
 
 @dataclass(frozen=True)
 class MachineInfo:
+    """Machine information retrieved from GCE Metadata Server."""
     machine_type: str
     vcpu_count: int
     cpu_platform: str
@@ -192,6 +197,7 @@ class MachineInfo:
 
 @dataclass(frozen=True)
 class StockfishInfo:
+    """Information about the Stockfish binary run in the benchmark."""
     binary: str
     version: str
     compiler: str
@@ -233,7 +239,7 @@ def get_cpu_info() -> CPUInfo:
     physicals = set()
     models: MutableMapping[str, int] = collections.defaultdict(int)
     last_model = None
-    with open('/proc/cpuinfo') as f:
+    with open('/proc/cpuinfo', encoding='utf8') as f:
         for line in f:
             if m := re.match(r'processor\s*:\s*(\d+)', line):
                 processors.add(int(m.group(1)))
@@ -257,13 +263,13 @@ def get_machine_info() -> MachineInfo:
     vcpu_count = int(m.group(1)) if m else cpu_info.processors
 
     return MachineInfo(
-        machine_type=machine_type.split('/')[-1].strip(),
+        machine_type=machine_type.rsplit('/', maxsplit=1)[-1].strip(),
         vcpu_count=vcpu_count,
         cpu_platform=get_metadata('/computeMetadata/v1/instance/cpu-platform'),
         cpu_info=cpu_info,
         instance_id=get_metadata('/computeMetadata/v1/instance/id'),
-        image=get_metadata('/computeMetadata/v1/instance/image').split('/')[-1].strip(),
-        zone=get_metadata('/computeMetadata/v1/instance/zone').split('/')[-1].strip(),
+        image=get_metadata('/computeMetadata/v1/instance/image').rsplit('/', maxsplit=1)[-1].strip(),
+        zone=get_metadata('/computeMetadata/v1/instance/zone').rsplit('/', maxsplit=1)[-1].strip(),
     )
 
 
