@@ -71,6 +71,11 @@ Some observations:
     for each machine type is remarkably consistent at around 1M per core for
     `c3d` with the `vnni512` binary, and around 800k per core for `n2d` with the
     `bmi2` binary.
+  - The one exception to this is the `c3` family, which did surprisingly badly
+    on the benchmark, especially at higher core counts. `c3-standard-22` and
+    `c3-standard-44` peaked at around 0.9 MPS per core, but `c3-standard-88`
+    peaked way down at around 0.7. I found this so surprising that I tried it
+    twice in separate zones, but the results were consistent.
   - We can see here that running a more optimised binary on a machine family
     with a more modern CPU architecture is making a significant difference. This
     can be clearly seen if we look at the same data on a per-thread basis (with
@@ -99,10 +104,24 @@ import plotly.express as px
 
 df = pd.read_csv('sfbench.csv')
 
-mean_nps = df.groupby(['StockfishBinary', 'StockfishVersion', 'MachineType', 'Threads', 'CpuProcessors'])['NPS'].mean().reset_index()
+group_cols = [
+    'StockfishBinary',
+    'StockfishVersion',
+    'MachineType',
+    'Threads',
+    'CpuProcessors',
+    # 'InstanceID',
+]
+summary_cols = [
+    'MachineType',
+    # 'InstanceID',
+]
+
+mean_nps = df.groupby(group_cols)['NPS'].mean().reset_index()
 def config_summary(row):
-    bsummary = row['StockfishBinary'].rsplit('-', maxsplit=1)[-1]
-    return f'{bsummary} {row["MachineType"]}'
+    parts = [row['StockfishBinary'].rsplit('-', maxsplit=1)[-1]]
+    parts.extend(str(row[col]) for col in summary_cols)
+    return ' '.join(parts)
 mean_nps['ConfigSummary'] = mean_nps.apply(config_summary, axis=1)
 mean_nps['NPSPerThread'] = mean_nps.apply(lambda r: r['NPS'] / r['Threads'], axis=1)
 
@@ -135,4 +154,5 @@ greater playing strength).
   threads.
 - By doing this, you should get roughly 0.8 MNPS of search speed per core with
   `n2d` and the `bmi2` binary, and roughly 1.0 MNPS with `c3d` and the `vnni512`
-  binary.
+  binary. The `c3` family seems to result in much lower incremental benefits
+  from higher core counts past a certain point.
