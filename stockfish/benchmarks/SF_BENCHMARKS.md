@@ -74,8 +74,10 @@ Some observations:
   - The one exception to this is the `c3` family, which did surprisingly badly
     on the benchmark, especially at higher core counts. `c3-standard-22` and
     `c3-standard-44` peaked at around 0.9 MPS per core, but `c3-standard-88`
-    peaked way down at around 0.7. I found this so surprising that I tried it
-    twice in separate zones, but the results were consistent.
+    peaked way down at around 0.7. The NPS achieved by `c3d` was around _50%
+    higher_ at peak than `c3` for the 88/90-core shapes! I found this so
+    surprising that I tried it twice in separate zones, but the results were
+    consistent.
   - We can see here that running a more optimised binary on a machine family
     with a more modern CPU architecture is making a significant difference. This
     can be clearly seen if we look at the same data on a per-thread basis (with
