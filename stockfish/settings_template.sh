@@ -3,11 +3,11 @@ SSH_USER=$USER
 
 # See https://stockfishchess.org/download/linux/ for Stockfish binaries optimised for different platforms.
 
-# Works on c3d machine series but not n2d.
+# Works on c3d machine family but not n2d.
 STOCKFISH_URL="https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-ubuntu-x86-64-vnni512.tar"
 STOCKFISH_BINARY_PATH="stockfish/stockfish-ubuntu-x86-64-vnni512"
 
-# Fallback that works on n2d machine series.
+# Fallback that works on n2d machine family.
 # STOCKFISH_URL="https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-ubuntu-x86-64-bmi2.tar"
 # STOCKFISH_BINARY_PATH="stockfish/stockfish-ubuntu-x86-64-bmi2"
 
@@ -15,6 +15,7 @@ GCP_PROJECT=
 GCP_ZONE=
 # For available machine types in a zone, run:
 # gcloud compute machine-types list --filter="zone=(${GCP_ZONE})"
+# See also https://cloud.google.com/compute/docs/machine-resource
 GCP_MACHINE_TYPE=
 
 # Newer Stockfish binaries require newer libc versions hence relatively recent Ubuntu
