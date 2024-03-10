@@ -50,7 +50,7 @@ of running on each machine type.
 
 ### Threads and machine types
 
-![Threads and machine types benchmark graph](sfbenchgraph.png)
+![NPS versus thread count benchmark graph per machine type](sfbenchgraph.png)
 
 Each line on this graph is a run of the benchmark on a single VM machine type.
 The horizontal axis shows the number of threads; the vertical axis shows the
@@ -81,7 +81,7 @@ Some observations:
     can be clearly seen if we look at the same data on a per-thread basis (with
     each series truncated at the CPU count):
 
-![Performance per thread](sfbenchgraphperthread.png)
+![NPS per thread versus thread count graph per machine type](sfbenchgraphperthread.png)
 
 The raw data is in this folder as `sfbench.csv`, so you can get an interactive
 version of the
@@ -96,7 +96,9 @@ cd stockfish/benchmarks
 jupyter lab
 ```
 
-Then, run the following code in a notebook:
+Then, run the following code in a notebook.
+
+First, to build the data:
 
 ```python
 import pandas as pd
@@ -110,6 +112,7 @@ group_cols = [
     'MachineType',
     'Threads',
     'CpuProcessors',
+    'TTSizeMb',
     # 'InstanceID',
 ]
 summary_cols = [
@@ -124,13 +127,20 @@ def config_summary(row):
     return ' '.join(parts)
 mean_nps['ConfigSummary'] = mean_nps.apply(config_summary, axis=1)
 mean_nps['NPSPerThread'] = mean_nps.apply(lambda r: r['NPS'] / r['Threads'], axis=1)
+```
 
-fig = px.line(mean_nps, x='Threads', y='NPS', color='ConfigSummary',
+Then, to plot it:
+
+```python
+# Just use the data with the fixed default hash size
+threads_nps = mean_nps[mean_nps['TTSizeMb'] == 16]
+fig = px.line(threads_nps, x='Threads', y='NPS', color='ConfigSummary',
              title='Stockfish 16.1 benchmark (Ubuntu x86)', width=800, height=600)
 fig.update_layout(yaxis_title='Mean NPS')
 fig.show()
 
-fig = px.line(mean_nps[mean_nps['Threads'] <= mean_nps['CpuProcessors']], x='Threads', y='NPSPerThread', color='ConfigSummary',
+fig = px.line(threads_nps[threads_nps['Threads'] <= threads_nps['CpuProcessors']],
+             x='Threads', y='NPSPerThread', color='ConfigSummary',
              title='Stockfish 16.1 benchmark (Ubuntu x86)', width=800, height=600)
 fig.update_layout(yaxis_title='Mean NPS per thread')
 fig.show()
@@ -147,6 +157,34 @@ greater playing strength).
 
 ![NPS benchmark for Stockfish 15](sfbenchgraph15.png)
 
+### Hash size
+
+The `sfbench.py` script also supports an option `--test_varying=ttsize`, which
+varies the size of the transposition table instead of the number of threads.
+
+I ran this on a couple of machine types, and the results show increasing
+`TTSizeMb` has essentially no effect on the mean NPS. This is perhaps not
+surprising, as my intuition would be that transposition tables should have
+little effect on the rate at which nodes can be searched. Rather, by avoiding
+repeated evaluation of more nodes, a larger hash would increase the depth the
+search can reach in a fixed amount of time -- or, equivalently, reduce the
+amount of time required for the search to reach a given depth.
+
+However, graphing `TotalTimeMS` against `TTSizeMb` also shows no clear
+relationship:
+
+```python
+mean_time = df.groupby(group_cols)['TotalTimeMS'].mean().reset_index()
+mean_time['ConfigSummary'] = mean_time.apply(config_summary, axis=1)
+hash_time = mean_time[mean_time['Threads'] == mean_time['CpuProcessors']]
+fig = px.line(hash_time, x='TTSizeMb', y='TotalTimeMS', color='ConfigSummary',
+             title='Stockfish 16.1 hash benchmark (Ubuntu x86)', width=800, height=600, log_x=True, markers=True)
+fig.update_layout(yaxis_title='Mean time (ms)')
+fig.show()
+```
+
+![TotalTimeMS versus TTSizeMb for Stockfish 16.1](sfhashtimegraph.png)
+
 ## Conclusions
 
 - Stockfish's `Threads` parameter should be set to around the same number of CPU
@@ -156,3 +194,5 @@ greater playing strength).
   `n2d` and the `bmi2` binary, and roughly 1.0 MNPS with `c3d` and the `vnni512`
   binary. The `c3` family seems to result in much lower incremental benefits
   from higher core counts past a certain point.
+- The hash size does not appear to affect any of the test metrics. I am not sure
+  why this might be.
