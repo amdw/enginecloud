@@ -52,9 +52,9 @@ of running on each machine type.
 
 ![Threads and machine types benchmark graph](sfbenchgraph.png)
 
-Each line on this graph is a run of the benchmark on a single VM. The horizontal
-axis shows the number of threads; the vertical axis shows the average NPS across
-the three runs for each thread count.
+Each line on this graph is a run of the benchmark on a single VM machine type.
+The horizontal axis shows the number of threads; the vertical axis shows the
+average NPS across the three runs for each thread count.
 
 The "M" unit on the vertical axis is _millions_ of NPS, so for example "20M"
 means 20 million NPS.
