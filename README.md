@@ -301,7 +301,7 @@ make sure you are getting roughly the performance you expect.
 
 For more information on how to set Stockfish engine parameters, see [the
 Stockfish
-README](https://github.com/official-stockfish/Stockfish/blob/master/README.md).
+wiki](https://official-stockfish.github.io/docs/stockfish-wiki/Stockfish-FAQ.html#optimal-settings).
 
 Once you have finished with the engine, you should run `stockfish/delete.sh` to
 delete the VM, so you are no longer charged for it. Alternatively, you can do it
