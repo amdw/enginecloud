@@ -17,35 +17,35 @@ This is a sort of "do-it-yourself" version of "Cloud Engine" products such as
 Cloud](https://en.chessbase.com/post/tutorial-how-does-the-engine-cloud-work) or
 [Chessify](https://chessify.me/). The advantages of a DIY approach are:
 
-* It can cost less, especially for short periods of use, because you only pay
+- It can cost less, especially for short periods of use, because you only pay
   the cost of running the VMs on the cloud provider. Modern cloud providers
   usually provide very fine-grained billing, even down to the second, so you
   only pay for exactly what you use.
-  * For example, at the time of writing (May 2022), you can get a 64-core
+  - For example, at the time of writing (May 2022), you can get a 64-core
     `n2-standard-64` VM in the `europe-west1` region,
     [capable](stockfish/benchmarks/SF_BENCHMARKS.md) of running Stockfish 15 at
     over 60 MNPS, for approximately US$2.74 per hour.
-* You get a very wide choice of chess GUI (and the operating system etc). Some
+- You get a very wide choice of chess GUI (and the operating system etc). Some
   paid cloud engine providers can only be accessed using the vendor's
   proprietary UIs.
-* You get full control over the software and (virtual) hardware: you can choose
+- You get full control over the software and (virtual) hardware: you can choose
   a location for the VMs close to you to minimise latency, what VM type you use
   (how many CPU cores, what type of CPU etc), what version of the chess software
   you run etc.
-* It is an opportunity to learn more about cloud infrastructure, chess software,
+- It is an opportunity to learn more about cloud infrastructure, chess software,
   and potentially other technical topics.
 
 The disadvantages compared to a paid Cloud Engine product are:
 
-* A greater degree of technical expertise is required. This project is designed
+- A greater degree of technical expertise is required. This project is designed
   to reduce that somewhat, but you still need to make a number of decisions that
   require a degree of understanding, and install and use software on your
   computer that is normally only used by developers.
-* You don't get the kind of hosted web UI, mobile app or other features a cloud
+- You don't get the kind of hosted web UI, mobile app or other features a cloud
   engine provider might have.
-* You won't get the kind of customer support you would get from a dedicated
+- You won't get the kind of customer support you would get from a dedicated
   provider.
-* The pricing model of cloud providers is more complex, and once you start using
+- The pricing model of cloud providers is more complex, and once you start using
   billable resources, stopping typically requires explicit action on your part
   (such as deleting the VM). This leads to a greater risk you will make a
   mistake (such as forgetting to delete a VM after you have finished with it)
@@ -166,26 +166,26 @@ fun in the process!
 
 ### Prerequisites
 
-* A computer with a Unix-like environment (e.g. MacOS or Linux), to run the
+- A computer with a Unix-like environment (e.g. MacOS or Linux), to run the
   commands. The techniques in this repository should be possible to use from
   Windows as well, but I have no personal interest in doing that.
-* A Google Cloud account (see [this
+- A Google Cloud account (see [this
   guide](https://cloud.google.com/docs/get-started))
-* A Google Cloud project with the [Google Compute Engine
+- A Google Cloud project with the [Google Compute Engine
   API](https://console.cloud.google.com/compute) enabled
-* You will need the following software installed:
-  * A text editor of your choice
-  * The `bash` shell
-  * [The Go toolchain](https://go.dev/) (running `go version` should spit out
+- You will need the following software installed:
+  - A text editor of your choice
+  - The `bash` shell
+  - [The Go toolchain](https://go.dev/) (running `go version` should spit out
     some relatively recent version)
-  * [The gcloud CLI](https://cloud.google.com/sdk/gcloud) - scripts in this
+  - [The gcloud CLI](https://cloud.google.com/sdk/gcloud) - scripts in this
     repository assume you have `gcloud` on your `PATH` and have run `gcloud
-    init`
-  * A [chess GUI which supports UCI
+init`
+  - A [chess GUI which supports UCI
     engines](https://www.chessprogramming.org/UCI#GUIs). All my testing was done
     using [HIARCS Chess Explorer](https://www.hiarcs.com/chess-explorer.html),
     but there are plenty of free and open source options.
-* Sufficient [Google Compute Engine
+- Sufficient [Google Compute Engine
   quota](https://cloud.google.com/compute/quotas) to run the types of VM you
   want. The quota you get with a free trial account or a newly set up account
   should be sufficient for basic experiments with Stockfish, but for machine
@@ -214,19 +214,19 @@ cp stockfish/settings_template.sh stockfish/settings.sh
 and then edit `stockfish/settings.sh`. Check all the environment variables set
 there, and set the ones which are blank. At a minimum, you need to specify:
 
-* `GCP_PROJECT`: the project ID of the Google Cloud project where you want to
+- `GCP_PROJECT`: the project ID of the Google Cloud project where you want to
   create the VM. (You can find this under "Project info" in the [Google Cloud
   Dashboard](https://console.cloud.google.com/home/dashboard) when you have the
   correct project selected in the drop-down at the top. Alternatively, run
   `gcloud projects list`.)
-* `GCP_ZONE`: the [GCE
+- `GCP_ZONE`: the [GCE
   zone](https://cloud.google.com/compute/docs/regions-zones) where you want to
   create your VM. There are various considerations here: all else being equal,
   you want to choose a zone as close to you as possible to minimise network
   latency, but zones vary in terms of cost (e.g. see [VM instance
   pricing](https://cloud.google.com/compute/vm-instance-pricing)) and
   availability of certain machine types.
-* `GCP_MACHINE_TYPE`: the machine type used to create the VM. This will
+- `GCP_MACHINE_TYPE`: the machine type used to create the VM. This will
   determine the type and number of CPU cores your Stockfish VM has. For a full
   list of machine types, you can run `gcloud compute machine-types list`;
   alternatively you can choose your desired values from the drop-downs in the
@@ -242,25 +242,25 @@ there, and set the ones which are blank. At a minimum, you need to specify:
 
 You should also check the other environment variables:
 
-* `EC_HOME`: a directory where the project can store binaries and other files.
+- `EC_HOME`: a directory where the project can store binaries and other files.
   By default, `$HOME/enginecloud` will be used. I recommend using a directory
   dedicated to this project, which does not contain any other files you care
   about, as several scripts will write files here.
-* `STOCKFISH_URL`, `STOCKFISH_BINARY_PATH`: the version of Stockfish that will be
+- `STOCKFISH_URL`, `STOCKFISH_BINARY_PATH`: the version of Stockfish that will be
   downloaded and used, and the path to the Stockfish binary within the
   downloaded archive.
-* `GCP_IMAGE_PROJECT` and `GCP_IMAGE_FAMILY`: these determine [the OS
+- `GCP_IMAGE_PROJECT` and `GCP_IMAGE_FAMILY`: these determine [the OS
   image](https://cloud.google.com/compute/docs/images) used to create your VM.
-* `GCP_INSTANCE_NAME`: the name of the VM instance that will be created for
+- `GCP_INSTANCE_NAME`: the name of the VM instance that will be created for
   Stockfish inside your project.
-* `PROVISIONING_MODEL`: the GCE provisioning model to use for your VMs.
+- `PROVISIONING_MODEL`: the GCE provisioning model to use for your VMs.
   `STANDARD` is more expensive but more reliable; `SPOT` is cheaper but your VM
   may be deleted arbitrarily. See [this
   guide](https://cloud.google.com/compute/docs/instances/create-use-spot) for
   more information and [this
   reference](https://cloud.google.com/sdk/gcloud/reference/compute/instances/create)
   for possible values of the variable.
-* `MAX_RUN_DURATION`: a time after which the VM instance will be deleted. This
+- `MAX_RUN_DURATION`: a time after which the VM instance will be deleted. This
   is designed as a protection against accidentally forgetting to delete the VM
   and running up a larger-than-expected bill: set this to the maximum time you
   want to be able to use the VM for, and it will delete itself, along with its
@@ -301,7 +301,7 @@ make sure you are getting roughly the performance you expect.
 
 For more information on how to set Stockfish engine parameters, see [the
 Stockfish
-README](https://github.com/official-stockfish/Stockfish/blob/master/README.md).
+wiki](https://official-stockfish.github.io/docs/stockfish-wiki/Stockfish-FAQ.html#optimal-settings).
 
 Once you have finished with the engine, you should run `stockfish/delete.sh` to
 delete the VM, so you are no longer charged for it. Alternatively, you can do it
@@ -323,17 +323,17 @@ to familiarise yourself with the basic concepts and techniques.
 At the time of writing, Leela Chess Zero is much harder to get working, for a
 few reasons:
 
-* To get optimal performance, we need to use a [machine type that has at least
+- To get optimal performance, we need to use a [machine type that has at least
   one GPU](https://cloud.google.com/compute/docs/gpus). We have to choose the
   GPU type we want, and our choice will restrict the [GCE zones we can
   use](https://cloud.google.com/compute/docs/gpus/gpu-regions-zones). GPUs also
   require [special quota](https://cloud.google.com/compute/quotas#gpu_quota).
-* Using GPUs also requires us to download and install various libraries and
+- Using GPUs also requires us to download and install various libraries and
   drivers, including but not limited to
   [these](https://cloud.google.com/compute/docs/gpus/install-drivers-gpu). Some
   of the software we need is quite large to download, and not all of it is open
   source.
-* There is no pre-built Leela binary for Linux: we have to build it from source.
+- There is no pre-built Leela binary for Linux: we have to build it from source.
   (The way we do this is based on [the LC0
   README](https://github.com/LeelaChessZero/lc0) and [this
   guide](https://lczero.org/dev/wiki/google-cloud-guide-lc0/), among various
@@ -341,7 +341,7 @@ few reasons:
   mistakes you can easily make (e.g. trying to build without all the required
   NVidia software installed) which will result in a successful build but a very
   slow engine that does not take advantage of the GPU.
-* Even once we have built Leela Chess Zero, we still have to choose a neural
+- Even once we have built Leela Chess Zero, we still have to choose a neural
   network to run it with, which is [a non-trivial
   decision](https://lczero.org/play/networks/bestnets/) in itself.
 
@@ -364,12 +364,12 @@ Check the settings in that file, and fill in the missing ones. For the meaning
 of the common environment variables, refer to the Stockfish instructions. The
 only new settings you need are:
 
-* `ACCELERATOR_PARAMS`: this determines how many GPUs your VM will have, and
+- `ACCELERATOR_PARAMS`: this determines how many GPUs your VM will have, and
   what kind.
-* `GCP_BASE_IMAGE_PROJECT` and `GCP_BASE_IMAGE_FAMILY`: these determine the
+- `GCP_BASE_IMAGE_PROJECT` and `GCP_BASE_IMAGE_FAMILY`: these determine the
   image that will be used to base the initial VM on, the one in which you will
   build Leela.
-* `GCP_CREATED_IMAGE_FAMILY`: this is the image family in which your Leela image
+- `GCP_CREATED_IMAGE_FAMILY`: this is the image family in which your Leela image
   will be stored, if you choose to create one.
 
 Example parameters known to work are as follows (though I do not claim these are
@@ -422,9 +422,9 @@ any of these at the time of writing.
 
 The following utility scripts are available to help you manage your VM:
 
-* `leelazero/stop.sh` - stops the VM
-* `leelazero/delete.sh` - deletes the VM
-* `leelazero/check.sh` - lists the VMs and disks you currently have in the
+- `leelazero/stop.sh` - stops the VM
+- `leelazero/delete.sh` - deletes the VM
+- `leelazero/check.sh` - lists the VMs and disks you currently have in the
   project
 
 If you want to create an image for future use, as suggested above, shut down
@@ -434,7 +434,7 @@ VM whenever you like, and create a new one with
 `leelazero/create_from_image.sh`.
 
 (An alternative way to keep a ready-to-go Leela without creating images is to
-*stop* the VM, which shuts it down without deleting its disk. A stopped VM costs
+_stop_ the VM, which shuts it down without deleting its disk. A stopped VM costs
 a lot less than a running one, but you will [continue to incur some
 charges](https://cloud.google.com/compute/docs/instances/stop-start-instance#billing)
 for resources like the disk and IP address. Keeping an image should be cheaper.)
