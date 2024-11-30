@@ -74,8 +74,7 @@ esac
 
 echo "`date`: Creating virtual machine..."
 
-# TODO: Remove "beta" once --max-run-duration is in the GA gcloud
-gcloud beta compute instances create $GCP_INSTANCE_NAME \
+gcloud compute instances create $GCP_INSTANCE_NAME \
 	--project $GCP_PROJECT \
 	--zone $GCP_ZONE \
 	--machine-type $GCP_MACHINE_TYPE \
