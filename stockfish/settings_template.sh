@@ -21,7 +21,7 @@ GCP_MACHINE_TYPE=
 # Newer Stockfish binaries require newer libc versions hence relatively recent Ubuntu
 # gcloud compute images list | grep ubuntu
 GCP_IMAGE_PROJECT=ubuntu-os-cloud
-GCP_IMAGE_FAMILY=ubuntu-2204-lts
+GCP_IMAGE_FAMILY=ubuntu-2404-lts-amd64
 GCP_INSTANCE_NAME=stockfish
 # See https://cloud.google.com/compute/docs/instances/spot
 PROVISIONING_MODEL=SPOT
