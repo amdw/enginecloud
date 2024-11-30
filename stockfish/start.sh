@@ -26,8 +26,10 @@ source stockfish/settings.sh
 
 if ! [[ -e $EC_HOME ]]; then mkdir $EC_HOME; fi
 
+if [[ -z $SSH_USER ]]; then echo "SSH_USER must be set in settings.sh"; exit 1; fi
+
 # We will create a symlink on the VM at this location pointing to the Stockfish binary
-STOCKFISH_BINARY_LINK="/tmp/stockfish"
+STOCKFISH_BINARY_LINK="/home/${SSH_USER}/run_stockfish"
 
 cat > ${EC_HOME}/run_stockfish.go <<EOF
 package main
@@ -65,7 +67,7 @@ fi
 
 STOCKFISH_EXT="${STOCKFISH_URL##*.}"
 STOCKFISH_DOWNLOAD_TO="/tmp/stockfish.$STOCKFISH_EXT"
-STOCKFISH_EXTRACT_DIR=/tmp/sfextract
+STOCKFISH_EXTRACT_DIR=/home/${SSH_USER}/stockfish
 case $STOCKFISH_EXT in
 	"zip") STOCKFISH_EXTRACT_COMMAND="unzip $STOCKFISH_DOWNLOAD_TO -d $STOCKFISH_EXTRACT_DIR" ;;
 	"tar") STOCKFISH_EXTRACT_COMMAND="mkdir -p $STOCKFISH_EXTRACT_DIR && tar -xf $STOCKFISH_DOWNLOAD_TO -C $STOCKFISH_EXTRACT_DIR" ;;
