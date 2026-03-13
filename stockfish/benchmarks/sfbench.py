@@ -161,6 +161,7 @@ def run_varying_threads(
     depth: int,
     tt_size_mb: int,
     series_params: SeriesParams,
+    *,
     min_final_threads: int,
     has_improvement: Callable[[BenchResult, BenchResult], bool],
 ) -> Mapping[BenchParams, Sequence[BenchResult]]:
@@ -343,10 +344,9 @@ def get_stockfish_info(binary: str) -> StockfishInfo:
 def get_improvement_test(improvement_test: str) -> Callable[[BenchResult, BenchResult], bool]:
     if improvement_test == 'nps':
         return has_nps_improvement
-    elif improvement_test == 'any':
+    if improvement_test == 'any':
         return has_any_improvement
-    else:
-        raise ValueError(f'Unsupported improvement_test "{improvement_test}"')
+    raise ValueError(f'Unsupported improvement_test "{improvement_test}"')
 
 
 def main() -> None:
@@ -381,7 +381,7 @@ def main() -> None:
     if args.test_varying == 'threads':
         results = run_varying_threads(
             args.stockfish_binary, args.depth, args.tt_size_mb,
-            series_params, machine_info.vcpu_count, has_improvement)
+            series_params, min_final_threads=machine_info.vcpu_count, has_improvement=has_improvement)
     elif args.test_varying == 'ttsize':
         threads = args.threads if args.threads >= 1 else machine_info.vcpu_count
         results = run_varying_ttsize(
