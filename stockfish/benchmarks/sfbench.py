@@ -74,7 +74,7 @@ def run_benchmark(stockfish_binary: str, params: BenchParams) -> BenchResult:
         str(params.threads),    # threads
         str(params.depth),      # limit
     ], stderr=subprocess.STDOUT, encoding='utf8')
-    vals: MutableMapping[str, Any] = {'time': datetime.utcnow().replace(tzinfo=timezone.utc)}
+    vals: MutableMapping[str, Any] = {'time': datetime.now(timezone.utc)}
     for line in reversed(output.splitlines()):
         m = re.match(r'([^:]+\S)\s*:\s+(\d+)', line)
         if not m:
@@ -114,7 +114,7 @@ def run_series(
     params_seq: Iterable[BenchParams],
 ) -> Mapping[BenchParams, Sequence[BenchResult]]:
     results: Mapping[BenchParams, List[BenchResult]] = collections.defaultdict(list)
-    best_values = BenchResult(nps=0, nodes_searched=0, total_time_ms=1000000000000, time=datetime.utcnow().replace(tzinfo=timezone.utc))
+    best_values = BenchResult(nps=0, nodes_searched=0, total_time_ms=1000000000000, time=datetime.now(timezone.utc))
     failures_to_improve = 0
     for params in params_seq:
         failure = False
@@ -290,7 +290,7 @@ def get_stockfish_info(binary: str) -> StockfishInfo:
     return StockfishInfo(binary=os.path.basename(real_path), **parts)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('stockfish_binary')
     parser.add_argument('--depth', type=int, default=14)
