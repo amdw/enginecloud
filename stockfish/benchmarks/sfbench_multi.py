@@ -511,11 +511,6 @@ async def run_all_benchmarks(configs: list[BenchmarkConfig], project: str, zone:
 
 
 def main() -> None:
-    logging.basicConfig(
-        format='%(asctime)s %(levelname)-6s %(name)-12s: %(message)s',
-        level=logging.INFO,
-    )
-
     parser = argparse.ArgumentParser(
         description="Run Stockfish benchmarks across multiple VM types concurrently")
     parser.add_argument("--project", required=True, help="GCP project ID")
@@ -525,7 +520,14 @@ def main() -> None:
                         help="Print configurations without running benchmarks")
     parser.add_argument("--output-dir", "-o", default="benchmark_output",
                         help="Output directory for benchmark results (default: benchmark_output)")
+    parser.add_argument("-v", "--verbose", action="store_true",
+                        help="Enable debug logging")
     args = parser.parse_args()
+
+    logging.basicConfig(
+        format='%(asctime)s %(levelname)-6s %(name)-12s: %(message)s',
+        level=logging.DEBUG if args.verbose else logging.INFO,
+    )
 
     # Validate output directory exists
     output_dir = Path(args.output_dir)
