@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2022-2024 Andrew Medworth
+# Copyright 2022-2024, 2026 Andrew Medworth
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import itertools
 import logging
 import operator
 import os.path
+import platform
 import re
 import statistics
 import subprocess
@@ -101,7 +102,11 @@ def get_average_result(results: Sequence[BenchResult]) -> BenchResult:
     return BenchResult(time=max(r.time for r in results), **average_values)
 
 
-def has_improvement(result: BenchResult, best_so_far: BenchResult) -> bool:
+def has_nps_improvement(result: BenchResult, best_so_far: BenchResult) -> bool:
+    return result.nps > best_so_far.nps
+
+
+def has_any_improvement(result: BenchResult, best_so_far: BenchResult) -> bool:
     return (result.nps > best_so_far.nps or
             result.nodes_searched > best_so_far.nodes_searched or
             result.total_time_ms < best_so_far.total_time_ms)
@@ -120,6 +125,7 @@ def run_series(
     series_params: SeriesParams,
     force_continue: Callable[[BenchParams], bool],
     params_seq: Iterable[BenchParams],
+    has_improvement: Callable[[BenchResult, BenchResult], bool],
 ) -> Mapping[BenchParams, Sequence[BenchResult]]:
     results: Mapping[BenchParams, List[BenchResult]] = collections.defaultdict(list)
     best_values = BenchResult(nps=0, nodes_searched=0, total_time_ms=1000000000000, time=datetime.now(timezone.utc))
@@ -155,7 +161,9 @@ def run_varying_threads(
     depth: int,
     tt_size_mb: int,
     series_params: SeriesParams,
+    *,
     min_final_threads: int,
+    has_improvement: Callable[[BenchResult, BenchResult], bool],
 ) -> Mapping[BenchParams, Sequence[BenchResult]]:
     def force_continue(params: BenchParams):
         return params.threads < min_final_threads
@@ -166,6 +174,7 @@ def run_varying_threads(
         series_params,
         force_continue,
         (BenchParams(threads=t, tt_size_mb=tt_size_mb, depth=depth) for t in thread_counts),
+        has_improvement,
     )
 
 
@@ -174,6 +183,7 @@ def run_varying_ttsize(
     depth: int,
     threads: int,
     series_params: SeriesParams,
+    has_improvement: Callable[[BenchResult, BenchResult], bool],
 ) -> Mapping[BenchParams, Sequence[BenchResult]]:
     # Start with the default and increase by 2x each time
     hash_sizes = itertools.accumulate(itertools.repeat(2), func=operator.mul, initial=16)
@@ -182,6 +192,7 @@ def run_varying_ttsize(
         series_params,
         lambda p: False,
         (BenchParams(threads=threads, tt_size_mb=size, depth=depth) for size in hash_sizes),
+        has_improvement,
     )
 
 
@@ -243,6 +254,19 @@ def get_metadata(path: str) -> str:
          encoding='utf8')
 
 
+def is_on_gce() -> bool:
+    """Check if running on GCE by attempting to reach the metadata server."""
+    try:
+        subprocess.check_call(
+            ['curl', '-s', '-f', '--connect-timeout', '1',
+             'http://metadata.google.internal/computeMetadata/v1/',
+             '-H', 'Metadata-Flavor: Google'],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
+
 def get_cpu_info() -> CPUInfo:
     """Load processor information from /proc/cpuinfo."""
     processors = set()
@@ -267,20 +291,39 @@ def get_cpu_info() -> CPUInfo:
     return CPUInfo(processors=len(processors), cores=len(cores), physicals=len(physicals), models=models_summary)
 
 
-def get_machine_info() -> MachineInfo:
-    machine_type = get_metadata('/computeMetadata/v1/instance/machine-type')
-    cpu_info = get_cpu_info()
-    m = re.search(r'-(\d+)$', machine_type)
-    vcpu_count = int(m.group(1)) if m else cpu_info.processors
+def get_machine_info(require_gce: bool = True) -> MachineInfo:
+    if os.access('/proc/cpuinfo', os.R_OK):
+        cpu_info = get_cpu_info()
+    else:
+        cpu_info = CPUInfo(processors=-1, cores=-1, physicals=-1, models='unknown')
 
+    if is_on_gce():
+        machine_type = get_metadata('/computeMetadata/v1/instance/machine-type')
+        m = re.search(r'-(\d+)$', machine_type)
+        vcpu_count = int(m.group(1)) if m else cpu_info.processors
+
+        return MachineInfo(
+            machine_type=machine_type.rsplit('/', maxsplit=1)[-1].strip(),
+            vcpu_count=vcpu_count,
+            cpu_platform=get_metadata('/computeMetadata/v1/instance/cpu-platform'),
+            cpu_info=cpu_info,
+            instance_id=get_metadata('/computeMetadata/v1/instance/id'),
+            image=get_metadata('/computeMetadata/v1/instance/image').rsplit('/', maxsplit=1)[-1].strip(),
+            zone=get_metadata('/computeMetadata/v1/instance/zone').rsplit('/', maxsplit=1)[-1].strip(),
+        )
+
+    if require_gce:
+        raise RuntimeError('GCE metadata server not available. Use --no-require-gce to run outside GCE.')
+
+    # Running outside GCE - return placeholders to enable local testing
     return MachineInfo(
-        machine_type=machine_type.rsplit('/', maxsplit=1)[-1].strip(),
-        vcpu_count=vcpu_count,
-        cpu_platform=get_metadata('/computeMetadata/v1/instance/cpu-platform'),
+        machine_type=platform.machine(),
+        vcpu_count=-1,
+        cpu_platform=platform.processor() or cpu_info.models,
         cpu_info=cpu_info,
-        instance_id=get_metadata('/computeMetadata/v1/instance/id'),
-        image=get_metadata('/computeMetadata/v1/instance/image').rsplit('/', maxsplit=1)[-1].strip(),
-        zone=get_metadata('/computeMetadata/v1/instance/zone').rsplit('/', maxsplit=1)[-1].strip(),
+        instance_id='non-GCE',
+        image='non-GCE',
+        zone='non-GCE',
     )
 
 
@@ -298,6 +341,14 @@ def get_stockfish_info(binary: str) -> StockfishInfo:
     return StockfishInfo(binary=os.path.basename(real_path), **parts)
 
 
+def get_improvement_test(improvement_test: str) -> Callable[[BenchResult, BenchResult], bool]:
+    if improvement_test == 'nps':
+        return has_nps_improvement
+    if improvement_test == 'any':
+        return has_any_improvement
+    raise ValueError(f'Unsupported improvement_test "{improvement_test}"')
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('stockfish_binary')
@@ -307,13 +358,16 @@ def main() -> None:
     parser.add_argument('--test_varying', type=str, choices=['threads', 'ttsize'], default='threads')
     parser.add_argument('--repetitions', type=int, default=3)
     parser.add_argument('--max_failures_to_improve', type=int, default=3)
+    parser.add_argument('--improvement_test', type=str, choices=['nps', 'any'], default='nps',
+                        help="Metric(s) to check for improvement to decide when to stop changing controlled inputs")
     parser.add_argument('--quick', action=argparse.BooleanOptionalAction)
+    parser.add_argument('--require-gce', action=argparse.BooleanOptionalAction, default=True)
     args = parser.parse_args()
 
     logging.basicConfig(stream=sys.stderr, format='%(asctime)s %(levelname)-6s %(name)-8s: %(message)s',
                         level=logging.INFO)
 
-    machine_info = get_machine_info()
+    machine_info = get_machine_info(require_gce=args.require_gce)
     stockfish_info = get_stockfish_info(args.stockfish_binary)
     if args.quick:
         print(f'Stockfish: {stockfish_info}')
@@ -323,14 +377,15 @@ def main() -> None:
         return
 
     series_params = SeriesParams(repetitions=args.repetitions, max_failures_to_improve=args.max_failures_to_improve)
+    has_improvement = get_improvement_test(args.improvement_test)
     if args.test_varying == 'threads':
         results = run_varying_threads(
             args.stockfish_binary, args.depth, args.tt_size_mb,
-            series_params, machine_info.vcpu_count)
+            series_params, min_final_threads=machine_info.vcpu_count, has_improvement=has_improvement)
     elif args.test_varying == 'ttsize':
         threads = args.threads if args.threads >= 1 else machine_info.vcpu_count
         results = run_varying_ttsize(
-            args.stockfish_binary, args.depth, threads, series_params)
+            args.stockfish_binary, args.depth, threads, series_params, has_improvement)
     else:
         raise ValueError(f'Unsupported test_varying {args.test_varying}')
 
