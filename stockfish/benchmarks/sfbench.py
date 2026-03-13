@@ -301,19 +301,20 @@ def get_machine_info(require_gce: bool = True) -> MachineInfo:
             image=get_metadata('/computeMetadata/v1/instance/image').rsplit('/', maxsplit=1)[-1].strip(),
             zone=get_metadata('/computeMetadata/v1/instance/zone').rsplit('/', maxsplit=1)[-1].strip(),
         )
-    elif require_gce:
+
+    if require_gce:
         raise RuntimeError('GCE metadata server not available. Use --no-require-gce to run outside GCE.')
-    else:
-        # Running outside GCE - use local system info
-        return MachineInfo(
-            machine_type=platform.machine(),
-            vcpu_count=-1,
-            cpu_platform=platform.processor() or cpu_info.models,
-            cpu_info=cpu_info,
-            instance_id='non-GCE',
-            image='non-GCE',
-            zone='non-GCE',
-        )
+
+    # Running outside GCE - return placeholders to enable local testing
+    return MachineInfo(
+        machine_type=platform.machine(),
+        vcpu_count=-1,
+        cpu_platform=platform.processor() or cpu_info.models,
+        cpu_info=cpu_info,
+        instance_id='non-GCE',
+        image='non-GCE',
+        zone='non-GCE',
+    )
 
 
 def get_stockfish_info(binary: str) -> StockfishInfo:
