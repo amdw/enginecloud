@@ -25,6 +25,7 @@ import itertools
 import logging
 import operator
 import os.path
+import platform
 import re
 import statistics
 import subprocess
@@ -243,6 +244,19 @@ def get_metadata(path: str) -> str:
          encoding='utf8')
 
 
+def is_on_gce() -> bool:
+    """Check if running on GCE by attempting to reach the metadata server."""
+    try:
+        subprocess.check_call(
+            ['curl', '-s', '-f', '--connect-timeout', '1',
+             'http://metadata.google.internal/computeMetadata/v1/',
+             '-H', 'Metadata-Flavor: Google'],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
+
 def get_cpu_info() -> CPUInfo:
     """Load processor information from /proc/cpuinfo."""
     processors = set()
@@ -267,21 +281,39 @@ def get_cpu_info() -> CPUInfo:
     return CPUInfo(processors=len(processors), cores=len(cores), physicals=len(physicals), models=models_summary)
 
 
-def get_machine_info() -> MachineInfo:
-    machine_type = get_metadata('/computeMetadata/v1/instance/machine-type')
-    cpu_info = get_cpu_info()
-    m = re.search(r'-(\d+)$', machine_type)
-    vcpu_count = int(m.group(1)) if m else cpu_info.processors
+def get_machine_info(require_gce: bool = True) -> MachineInfo:
+    if os.access('/proc/cpuinfo', os.R_OK):
+        cpu_info = get_cpu_info()
+    else:
+        cpu_info = CPUInfo(processors=-1, cores=-1, physicals=-1, models='unknown')
 
-    return MachineInfo(
-        machine_type=machine_type.rsplit('/', maxsplit=1)[-1].strip(),
-        vcpu_count=vcpu_count,
-        cpu_platform=get_metadata('/computeMetadata/v1/instance/cpu-platform'),
-        cpu_info=cpu_info,
-        instance_id=get_metadata('/computeMetadata/v1/instance/id'),
-        image=get_metadata('/computeMetadata/v1/instance/image').rsplit('/', maxsplit=1)[-1].strip(),
-        zone=get_metadata('/computeMetadata/v1/instance/zone').rsplit('/', maxsplit=1)[-1].strip(),
-    )
+    if is_on_gce():
+        machine_type = get_metadata('/computeMetadata/v1/instance/machine-type')
+        m = re.search(r'-(\d+)$', machine_type)
+        vcpu_count = int(m.group(1)) if m else cpu_info.processors
+
+        return MachineInfo(
+            machine_type=machine_type.rsplit('/', maxsplit=1)[-1].strip(),
+            vcpu_count=vcpu_count,
+            cpu_platform=get_metadata('/computeMetadata/v1/instance/cpu-platform'),
+            cpu_info=cpu_info,
+            instance_id=get_metadata('/computeMetadata/v1/instance/id'),
+            image=get_metadata('/computeMetadata/v1/instance/image').rsplit('/', maxsplit=1)[-1].strip(),
+            zone=get_metadata('/computeMetadata/v1/instance/zone').rsplit('/', maxsplit=1)[-1].strip(),
+        )
+    elif require_gce:
+        raise RuntimeError('GCE metadata server not available. Use --no-require-gce to run outside GCE.')
+    else:
+        # Running outside GCE - use local system info
+        return MachineInfo(
+            machine_type=platform.machine(),
+            vcpu_count=-1,
+            cpu_platform=platform.processor() or cpu_info.models,
+            cpu_info=cpu_info,
+            instance_id='non-GCE',
+            image='non-GCE',
+            zone='non-GCE',
+        )
 
 
 def get_stockfish_info(binary: str) -> StockfishInfo:
@@ -308,12 +340,13 @@ def main() -> None:
     parser.add_argument('--repetitions', type=int, default=3)
     parser.add_argument('--max_failures_to_improve', type=int, default=3)
     parser.add_argument('--quick', action=argparse.BooleanOptionalAction)
+    parser.add_argument('--require-gce', action=argparse.BooleanOptionalAction, default=True)
     args = parser.parse_args()
 
     logging.basicConfig(stream=sys.stderr, format='%(asctime)s %(levelname)-6s %(name)-8s: %(message)s',
                         level=logging.INFO)
 
-    machine_info = get_machine_info()
+    machine_info = get_machine_info(require_gce=args.require_gce)
     stockfish_info = get_stockfish_info(args.stockfish_binary)
     if args.quick:
         print(f'Stockfish: {stockfish_info}')
