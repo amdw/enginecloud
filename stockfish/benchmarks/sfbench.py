@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2022-2024 Andrew Medworth
+# Copyright 2022-2024, 2026 Andrew Medworth
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -101,7 +101,11 @@ def get_average_result(results: Sequence[BenchResult]) -> BenchResult:
     return BenchResult(time=max(r.time for r in results), **average_values)
 
 
-def has_improvement(result: BenchResult, best_so_far: BenchResult) -> bool:
+def has_nps_improvement(result: BenchResult, best_so_far: BenchResult) -> bool:
+    return result.nps > best_so_far.nps
+
+
+def has_any_improvement(result: BenchResult, best_so_far: BenchResult) -> bool:
     return (result.nps > best_so_far.nps or
             result.nodes_searched > best_so_far.nodes_searched or
             result.total_time_ms < best_so_far.total_time_ms)
@@ -120,6 +124,7 @@ def run_series(
     series_params: SeriesParams,
     force_continue: Callable[[BenchParams], bool],
     params_seq: Iterable[BenchParams],
+    has_improvement: Callable[[BenchResult, BenchResult], bool],
 ) -> Mapping[BenchParams, Sequence[BenchResult]]:
     results: Mapping[BenchParams, List[BenchResult]] = collections.defaultdict(list)
     best_values = BenchResult(nps=0, nodes_searched=0, total_time_ms=1000000000000, time=datetime.now(timezone.utc))
@@ -156,6 +161,7 @@ def run_varying_threads(
     tt_size_mb: int,
     series_params: SeriesParams,
     min_final_threads: int,
+    has_improvement: Callable[[BenchResult, BenchResult], bool],
 ) -> Mapping[BenchParams, Sequence[BenchResult]]:
     def force_continue(params: BenchParams):
         return params.threads < min_final_threads
@@ -166,6 +172,7 @@ def run_varying_threads(
         series_params,
         force_continue,
         (BenchParams(threads=t, tt_size_mb=tt_size_mb, depth=depth) for t in thread_counts),
+        has_improvement,
     )
 
 
@@ -174,6 +181,7 @@ def run_varying_ttsize(
     depth: int,
     threads: int,
     series_params: SeriesParams,
+    has_improvement: Callable[[BenchResult, BenchResult], bool],
 ) -> Mapping[BenchParams, Sequence[BenchResult]]:
     # Start with the default and increase by 2x each time
     hash_sizes = itertools.accumulate(itertools.repeat(2), func=operator.mul, initial=16)
@@ -182,6 +190,7 @@ def run_varying_ttsize(
         series_params,
         lambda p: False,
         (BenchParams(threads=threads, tt_size_mb=size, depth=depth) for size in hash_sizes),
+        has_improvement,
     )
 
 
@@ -298,6 +307,15 @@ def get_stockfish_info(binary: str) -> StockfishInfo:
     return StockfishInfo(binary=os.path.basename(real_path), **parts)
 
 
+def get_improvement_test(improvement_test: str) -> Callable[[BenchResult, BenchResult], bool]:
+    if improvement_test == 'nps':
+        return has_nps_improvement
+    elif improvement_test == 'any':
+        return has_any_improvement
+    else:
+        raise ValueError(f'Unsupported improvement_test "{improvement_test}"')
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('stockfish_binary')
@@ -307,6 +325,8 @@ def main() -> None:
     parser.add_argument('--test_varying', type=str, choices=['threads', 'ttsize'], default='threads')
     parser.add_argument('--repetitions', type=int, default=3)
     parser.add_argument('--max_failures_to_improve', type=int, default=3)
+    parser.add_argument('--improvement_test', type=str, choices=['nps', 'any'], default='nps',
+                        help="Metric(s) to check for improvement to decide when to stop changing controlled inputs")
     parser.add_argument('--quick', action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
 
@@ -323,14 +343,15 @@ def main() -> None:
         return
 
     series_params = SeriesParams(repetitions=args.repetitions, max_failures_to_improve=args.max_failures_to_improve)
+    has_improvement = get_improvement_test(args.improvement_test)
     if args.test_varying == 'threads':
         results = run_varying_threads(
             args.stockfish_binary, args.depth, args.tt_size_mb,
-            series_params, machine_info.vcpu_count)
+            series_params, machine_info.vcpu_count, has_improvement)
     elif args.test_varying == 'ttsize':
         threads = args.threads if args.threads >= 1 else machine_info.vcpu_count
         results = run_varying_ttsize(
-            args.stockfish_binary, args.depth, threads, series_params)
+            args.stockfish_binary, args.depth, threads, series_params, has_improvement)
     else:
         raise ValueError(f'Unsupported test_varying {args.test_varying}')
 
