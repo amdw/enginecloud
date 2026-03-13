@@ -45,10 +45,18 @@ class BenchParams:
 @dataclass(frozen=True)
 class BenchResult:
     """Result of a single benchmark run."""
-    nps: int
-    nodes_searched: int
-    total_time_ms: int
+    nps: Union[int, float]
+    nodes_searched: Union[int, float]
+    total_time_ms: Union[int, float]
     time: datetime
+
+    def __str__(self) -> str:
+        def fmt(v: Any) -> str:
+            return f'{v:.1f}' if isinstance(v, float) else str(v)
+        fields = ', '.join(f'{f.name}={fmt(getattr(self, f.name))}'
+                           for f in dataclasses.fields(self) if f.name != 'time')
+        return f'BenchResult({fields})'
+
 
 RESULT_KEYS = {
     'Nodes/second': 'nps',
