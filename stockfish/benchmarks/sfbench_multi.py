@@ -511,6 +511,11 @@ async def run_all_benchmarks(configs: list[BenchmarkConfig], project: str, zone:
 
 
 def main() -> None:
+    logging.basicConfig(
+        format='%(asctime)s %(levelname)-6s %(name)-12s: %(message)s',
+        level=logging.INFO,
+    )
+
     parser = argparse.ArgumentParser(
         description="Run Stockfish benchmarks across multiple VM types concurrently")
     parser.add_argument("--project", required=True, help="GCP project ID")
@@ -522,13 +527,10 @@ def main() -> None:
                         help="Output directory for benchmark results (default: benchmark_output)")
     args = parser.parse_args()
 
-    if not args.output_dir or not args.output_dir.strip():
-        parser.error("--output-dir cannot be empty")
-
-    logging.basicConfig(
-        format='%(asctime)s %(levelname)-6s %(name)-12s: %(message)s',
-        level=logging.INFO,
-    )
+    # Validate output directory exists
+    output_dir = Path(args.output_dir)
+    if not output_dir.is_dir():
+        parser.error(f"Output directory does not exist: {output_dir.absolute()}")
 
     # Print header
     print("=" * 60)
@@ -561,9 +563,6 @@ def main() -> None:
     except ValueError as e:
         parser.error(str(e))
 
-    # Create output directory
-    output_dir = Path(args.output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
     LOGGER.info("Output directory: %s", output_dir.absolute())
 
     # Run all benchmarks concurrently
