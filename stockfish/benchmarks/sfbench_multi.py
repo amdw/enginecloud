@@ -559,11 +559,8 @@ def main() -> None:
     quota_manager = CpuQuotaManager(MAX_CPUS_PER_FAMILY, DEFAULT_MAX_CPUS)
 
     # Validate all configs before starting any tests
-    try:
-        for config in BENCHMARK_CONFIGS:
-            quota_manager.validate_config(config.machine_type)
-    except ValueError as e:
-        parser.error(str(e))
+    for config in BENCHMARK_CONFIGS:
+        quota_manager.validate_config(config.machine_type)
 
     LOGGER.info("Output directory: %s", output_dir.absolute())
 
