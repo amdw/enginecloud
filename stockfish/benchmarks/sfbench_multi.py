@@ -27,6 +27,7 @@ done >> sfbench.csv
 
 import argparse
 import asyncio
+import contextlib
 import getpass
 import logging
 import re
@@ -130,14 +131,11 @@ async def run_command_async(args: list[str], check: bool = True,
     """Run a command asynchronously and return the result."""
     LOGGER.debug("Running async: %s", ' '.join(args))
 
-    stdout_handle = None
-    stderr_handle = None
-
-    try:
-        if stdout_file:
-            stdout_handle = open(stdout_file, "a")
-        if stderr_file:
-            stderr_handle = open(stderr_file, "a")
+    with contextlib.ExitStack() as stack:
+        stdout_handle = (stack.enter_context(open(stdout_file, "a", encoding="utf-8"))
+                         if stdout_file else None)
+        stderr_handle = (stack.enter_context(open(stderr_file, "a", encoding="utf-8"))
+                         if stderr_file else None)
 
         process = await asyncio.create_subprocess_exec(
             *args,
@@ -160,11 +158,6 @@ async def run_command_async(args: list[str], check: bool = True,
             stdout.decode() if stdout else "",
             stderr.decode() if stderr else ""
         )
-    finally:
-        if stdout_handle:
-            stdout_handle.close()
-        if stderr_handle:
-            stderr_handle.close()
 
 
 def get_machine_family(machine_type: str) -> str:
@@ -188,10 +181,9 @@ def get_extract_command(url: str, download_path: str, extract_dir: str) -> str:
     ext = url.rsplit(".", 1)[-1]
     if ext == "zip":
         return f"unzip {download_path} -d {extract_dir}"
-    elif ext == "tar":
+    if ext == "tar":
         return f"mkdir -p {extract_dir} && tar -xf {download_path} -C {extract_dir}"
-    else:
-        raise ValueError(f"Unsupported file type: {ext}")
+    raise ValueError(f"Unsupported file type: {ext}")
 
 
 def generate_instance_name(config: BenchmarkConfig) -> str:
@@ -288,7 +280,7 @@ class BenchmarkRun:
                 if result.returncode == 0:
                     LOGGER.debug("VM %s is ready", self.instance_name)
                     return True
-            except Exception:
+            except OSError:
                 pass
 
             if attempt < max_attempts - 1:
