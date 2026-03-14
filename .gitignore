@@ -1,6 +1,5 @@
 */settings.sh
 .ipynb_checkpoints/
-*.ipynb
 *.pyc
 __pycache__/
 benchmark_output/

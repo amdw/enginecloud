@@ -17,6 +17,12 @@ Multi-VM Stockfish Benchmark Script
 
 Runs sfbench.py across multiple VM types and Stockfish binaries on GCP.
 Uses asyncio for concurrent execution with per-family CPU quota limits.
+
+Once you've run this, you can add the results to sfbench.csv with:
+
+for f in benchmark_output/*_stdout.txt; do
+    awk '/^StockfishBinary,/{found=1; next} found{print}' "$f"
+done >> sfbench.csv
 """
 
 import argparse

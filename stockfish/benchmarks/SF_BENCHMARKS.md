@@ -42,19 +42,23 @@ The `sfbench.py` script also supports an option `--test_varying=ttsize`, which
 increases the hash table size rather than the number of threads - again,
 stopping when the increases no longer result in improved performance.
 
-These tests were run in the `europe-west1` region in March 2024, using Stockfish
-16.1 on Ubuntu 22.04 LTS. In each case I used the best Stockfish binary capable
-of running on each machine type.
+The script `sfbench_multi.py` launches `sfbench.py` concurrently across a
+predefined set of VM machine types and Stockfish binaries, outputting the
+results to a specified folder, from which they can then be aggregated.
+
+I have collected various runs of this benchmark at various different times in
+`sfbench.csv`.
 
 ## Results
 
 ### Threads and machine types
 
-![NPS versus thread count benchmark graph per machine type](sfbenchgraph.png)
+![NPS versus thread count benchmark graph per machine type](sfbenchgraph18.png)
 
 Each line on this graph is a run of the benchmark on a single VM machine type.
 The horizontal axis shows the number of threads; the vertical axis shows the
-average NPS across the three runs for each thread count.
+average NPS across the three runs for each thread count. The marker on each line
+is where the number of threads was equal to the number of cores on the machine.
 
 The "M" unit on the vertical axis is _millions_ of NPS, so for example "20M"
 means 20 million NPS.
@@ -62,104 +66,33 @@ means 20 million NPS.
 Some observations:
 
 - The peak performance for each shape comes right around when the number of
-  threads is equal to the number of CPUs the VM has: the 90-core
-  `c3d-standard-90` peaks around 90 threads, the 32-core `n2d-standard-32` peaks
-  around 32 threads, and so on. This is much as we would intuitively expect.
+  threads is equal to the number of CPUs the VM has. This is much as we would
+  intuitively expect.
 - The performance increases roughly linearly with the number of cores.
   - There is some variation between the machine types, and the effect of
-    additional cores tends to drop as we move towards saturation, but the peak
-    for each machine type is remarkably consistent at around 1M per core for
-    `c3d` with the `vnni512` binary, and around 800k per core for `n2d` with the
-    `bmi2` binary.
-  - The one exception to this is the `c3` family, which did surprisingly badly
-    on the benchmark, especially at higher core counts. `c3-standard-22` and
-    `c3-standard-44` peaked at around 0.9 MPS per core, but `c3-standard-88`
-    peaked way down at around 0.7. The NPS achieved by `c3d` was around _50%
-    higher_ at peak than `c3` for the 88/90-core shapes! I found this so
-    surprising that I tried it twice in separate zones, but the results were
-    consistent.
+    additional cores tends to drop as we move towards saturation.
+  - The `c4` family did surprisingly badly on the benchmark, worse than `c3d`
+    from the previous generation.
   - We can see here that running a more optimised binary on a machine family
-    with a more modern CPU architecture is making a significant difference. This
-    can be clearly seen if we look at the same data on a per-thread basis (with
-    each series truncated at the CPU count):
+    with a more modern CPU architecture is making a significant difference.
 
-![NPS per thread versus thread count graph per machine type](sfbenchgraphperthread.png)
+Looking at these results on a per-thread basis is also interesting:
 
-The raw data is in this folder as `sfbench.csv`, so you can get an interactive
-version of the
-[Plotly](https://plotly.com/python/line-charts/#line-plots-with-plotlyexpress)
-graph by running the following from the root of the repo (requires Python 3 and
-`pipenv`):
+![NPS per thread versus thread count graph per machine type](sfbenchgraphperthread18.png)
 
-```
-pipenv install --dev
-pipenv shell
-cd stockfish/benchmarks
-jupyter lab
-```
+## Conclusions
 
-Then, run the following code in a notebook.
+- Stockfish's `Threads` parameter should be set to around the same number of CPU
+  cores you have on your VM. For example, if running on `c2-standard-8`, use 8
+  threads.
+- By doing this, you should get at least 1 MNPS of search speed per core with
+  `c4d` and the `avx512icl` binary.
 
-First, to build the data:
+## Older results
 
-```python
-import pandas as pd
-import plotly.express as px
+### Stockfish 16.1
 
-df = pd.read_csv('sfbench.csv')
-
-group_cols = [
-    'StockfishBinary',
-    'StockfishVersion',
-    'MachineType',
-    'Threads',
-    'CpuProcessors',
-    'TTSizeMb',
-    # 'InstanceID',
-]
-summary_cols = [
-    'MachineType',
-    # 'InstanceID',
-]
-
-mean_nps = df.groupby(group_cols)['NPS'].mean().reset_index()
-def config_summary(row):
-    parts = [row['StockfishBinary'].rsplit('-', maxsplit=1)[-1]]
-    parts.extend(str(row[col]) for col in summary_cols)
-    return ' '.join(parts)
-mean_nps['ConfigSummary'] = mean_nps.apply(config_summary, axis=1)
-mean_nps['NPSPerThread'] = mean_nps.apply(lambda r: r['NPS'] / r['Threads'], axis=1)
-```
-
-Then, to plot it:
-
-```python
-# Just use the data with the fixed default hash size
-threads_nps = mean_nps[mean_nps['TTSizeMb'] == 16]
-fig = px.line(threads_nps, x='Threads', y='NPS', color='ConfigSummary',
-             title='Stockfish 16.1 benchmark (Ubuntu x86)', width=800, height=600)
-fig.update_layout(yaxis_title='Mean NPS')
-fig.show()
-
-fig = px.line(threads_nps[threads_nps['Threads'] <= threads_nps['CpuProcessors']],
-             x='Threads', y='NPSPerThread', color='ConfigSummary',
-             title='Stockfish 16.1 benchmark (Ubuntu x86)', width=800, height=600)
-fig.update_layout(yaxis_title='Mean NPS per thread')
-fig.show()
-```
-
-A previous version of this benchmark run with Stockfish 15 may be found below.
-Interestingly, the NPS values for the older Stockfish 15 are significantly
-higher.
-
-It's possible the benchmark is different between the two versions, but my
-experience using the engines suggests that NPS is simply lower in Stockfish 16.1
-compared to Stockfish 15 (which is entirely compatible with 16.1 having a
-greater playing strength).
-
-![NPS benchmark for Stockfish 15](sfbenchgraph15.png)
-
-### Hash size
+![Stockfish 16.1 benchmark graph](sfbenchgraph161.png)
 
 The `sfbench.py` script also supports an option `--test_varying=ttsize`, which
 varies the size of the transposition table instead of the number of threads.
@@ -175,26 +108,30 @@ amount of time required for the search to reach a given depth.
 However, graphing `TotalTimeMS` against `TTSizeMb` also shows no clear
 relationship:
 
-```python
-mean_time = df.groupby(group_cols)['TotalTimeMS'].mean().reset_index()
-mean_time['ConfigSummary'] = mean_time.apply(config_summary, axis=1)
-hash_time = mean_time[mean_time['Threads'] == mean_time['CpuProcessors']]
-fig = px.line(hash_time, x='TTSizeMb', y='TotalTimeMS', color='ConfigSummary',
-             title='Stockfish 16.1 hash benchmark (Ubuntu x86)', width=800, height=600, log_x=True, markers=True)
-fig.update_layout(yaxis_title='Mean time (ms)')
-fig.show()
-```
-
 ![TotalTimeMS versus TTSizeMb for Stockfish 16.1](sfhashtimegraph.png)
 
-## Conclusions
+Overall, the hash size seems to have very little effect on the test metrics.
 
-- Stockfish's `Threads` parameter should be set to around the same number of CPU
-  cores you have on your VM. For example, if running on `c2-standard-8`, use 8
-  threads.
-- By doing this, you should get roughly 0.8 MNPS of search speed per core with
-  `n2d` and the `bmi2` binary, and roughly 1.0 MNPS with `c3d` and the `vnni512`
-  binary. The `c3` family seems to result in much lower incremental benefits
-  from higher core counts past a certain point.
-- The hash size does not appear to affect any of the test metrics. I am not sure
-  why this might be.
+### Stockfish 15
+
+![Stockfish 15 benchmark graph](sfbenchgraph15.png)
+
+The higher overall NPS values for this older (and weaker) engine show that
+higher NPS values do not necessarily indicate greater playing strength.
+
+## Generating the graphs
+
+I have included a Jupyter notebook `sfbench.ipynb` showing how the graphs were
+generated.
+
+To open up the Jupyter lab environment:
+
+```
+pipenv install --dev
+pipenv shell
+cd stockfish/benchmarks
+jupyter lab
+```
+
+Alternatively, you can open up the notebook in VSCode or some other editor which
+supports Jupyter notebooks natively.
