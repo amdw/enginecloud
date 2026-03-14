@@ -54,6 +54,7 @@ MAX_CPUS_PER_FAMILY: dict[str, int] = {
     "c2d": 56,
 }
 DEFAULT_MAX_CPUS = 24  # Default if family not specified
+GLOBAL_MAX_CPUS = 128  # CPUS_ALL_REGIONS quota limit
 
 
 @dataclass(frozen=True)
@@ -94,26 +95,26 @@ STOCKFISH_BMI2 = StockfishBinary(
 # Benchmark configurations: specific VM type + Stockfish binary combinations
 # Not all binaries work on all VM types due to CPU compatibility
 BENCHMARK_CONFIGS = [
-    BenchmarkConfig("c4d-standard-2", STOCKFISH_AVX512ICL),
-    # BenchmarkConfig("c4d-standard-16", STOCKFISH_AVX512ICL),
-    # BenchmarkConfig("c4d-standard-32", STOCKFISH_AVX512ICL),
-    # BenchmarkConfig("c4d-standard-64", STOCKFISH_AVX512ICL),
-    # BenchmarkConfig("c4d-standard-96", STOCKFISH_AVX512ICL),
+    # BenchmarkConfig("c4d-standard-2", STOCKFISH_AVX512ICL),
+    BenchmarkConfig("c4d-standard-16", STOCKFISH_AVX512ICL),
+    BenchmarkConfig("c4d-standard-32", STOCKFISH_AVX512ICL),
+    BenchmarkConfig("c4d-standard-64", STOCKFISH_AVX512ICL),
+    BenchmarkConfig("c4d-standard-96", STOCKFISH_AVX512ICL),
 
-    BenchmarkConfig("c4-standard-2", STOCKFISH_AVX512ICL),
-    # BenchmarkConfig("c4-standard-16", STOCKFISH_AVX512ICL),
-    # BenchmarkConfig("c4-standard-32", STOCKFISH_AVX512ICL),
-    # BenchmarkConfig("c4-standard-48", STOCKFISH_AVX512ICL),
-    # BenchmarkConfig("c4-standard-96", STOCKFISH_AVX512ICL),
+    # BenchmarkConfig("c4-standard-2", STOCKFISH_AVX512ICL),
+    BenchmarkConfig("c4-standard-16", STOCKFISH_AVX512ICL),
+    BenchmarkConfig("c4-standard-32", STOCKFISH_AVX512ICL),
+    BenchmarkConfig("c4-standard-48", STOCKFISH_AVX512ICL),
+    BenchmarkConfig("c4-standard-96", STOCKFISH_AVX512ICL),
 
-    # BenchmarkConfig("c3d-standard-16", STOCKFISH_VNNI512),
-    # BenchmarkConfig("c3d-standard-30", STOCKFISH_VNNI512),
-    # BenchmarkConfig("c3d-standard-60", STOCKFISH_VNNI512),
-    # BenchmarkConfig("c3d-standard-90", STOCKFISH_VNNI512),
+    BenchmarkConfig("c3d-standard-16", STOCKFISH_VNNI512),
+    BenchmarkConfig("c3d-standard-30", STOCKFISH_VNNI512),
+    BenchmarkConfig("c3d-standard-60", STOCKFISH_VNNI512),
+    BenchmarkConfig("c3d-standard-90", STOCKFISH_VNNI512),
 
-    # BenchmarkConfig("c2d-standard-16", STOCKFISH_BMI2),
-    # BenchmarkConfig("c2d-standard-32", STOCKFISH_BMI2),
-    # BenchmarkConfig("c2d-standard-56", STOCKFISH_BMI2),
+    BenchmarkConfig("c2d-standard-16", STOCKFISH_BMI2),
+    BenchmarkConfig("c2d-standard-32", STOCKFISH_BMI2),
+    BenchmarkConfig("c2d-standard-56", STOCKFISH_BMI2),
 ]
 
 
@@ -377,7 +378,8 @@ class ProgressTracker:
 
 async def progress_monitor(tracker: ProgressTracker, interval: int = 30) -> None:
     """Periodically log the status of active benchmarks."""
-    while await tracker.has_active():
+    # Loop indefinitely - this task is cancelled when all benchmarks complete
+    while True:
         await asyncio.sleep(interval)
         status = await tracker.get_status()
         if status:
@@ -390,19 +392,22 @@ async def progress_monitor(tracker: ProgressTracker, interval: int = 30) -> None
 
 
 class CpuQuotaManager:
-    """Manages CPU quota limits per machine type family using semaphores."""
+    """Manages CPU quota limits per machine type family and globally."""
 
-    def __init__(self, max_cpus_per_family: dict[str, int], default_max: int):
+    def __init__(self, max_cpus_per_family: dict[str, int], default_max: int,
+                 global_max: int | None = None):
         self._max_cpus_per_family = max_cpus_per_family
         self._default_max = default_max
+        self._global_max = global_max
         self._family_cpus_in_use: dict[str, int] = {}
+        self._global_cpus_in_use = 0
         self._lock = asyncio.Lock()
 
     def _get_max_cpus(self, family: str) -> int:
         return self._max_cpus_per_family.get(family, self._default_max)
 
     def validate_config(self, machine_type: str) -> None:
-        """Raise ValueError if a machine type exceeds its family's quota limit."""
+        """Raise ValueError if a machine type exceeds its family's or global quota limit."""
         family = get_machine_family(machine_type)
         cpu_count = get_cpu_count(machine_type)
         max_cpus = self._get_max_cpus(family)
@@ -412,21 +417,38 @@ class CpuQuotaManager:
                 f"but family {family} has a maximum quota of {max_cpus} CPUs. "
                 f"Increase MAX_CPUS_PER_FAMILY['{family}'] or remove this config."
             )
+        if self._global_max is not None and cpu_count > self._global_max:
+            raise ValueError(
+                f"Machine type {machine_type} requires {cpu_count} CPUs, "
+                f"but global quota is only {self._global_max} CPUs."
+            )
 
     async def acquire(self, machine_type: str) -> bool:
-        """Acquire CPU quota for a machine type. Blocks until quota is available."""
+        """Acquire CPU quota for a machine type. Blocks until quota is available.
+
+        Atomically acquires both family and global quota to avoid deadlocks.
+        """
         family = get_machine_family(machine_type)
         cpu_count = get_cpu_count(machine_type)
-        max_cpus = self._get_max_cpus(family)
+        max_family_cpus = self._get_max_cpus(family)
 
         while True:
             async with self._lock:
-                current_usage = self._family_cpus_in_use.get(family, 0)
-                if current_usage + cpu_count <= max_cpus:
-                    self._family_cpus_in_use[family] = current_usage + cpu_count
-                    LOGGER.debug("Acquired %d CPUs for %s (family %s: %d/%d in use)",
-                                cpu_count, machine_type, family,
-                                self._family_cpus_in_use[family], max_cpus)
+                family_usage = self._family_cpus_in_use.get(family, 0)
+                family_ok = family_usage + cpu_count <= max_family_cpus
+                global_ok = (self._global_max is None or
+                             self._global_cpus_in_use + cpu_count <= self._global_max)
+
+                # Only acquire if both quotas are available (atomic acquisition)
+                if family_ok and global_ok:
+                    self._family_cpus_in_use[family] = family_usage + cpu_count
+                    self._global_cpus_in_use += cpu_count
+                    LOGGER.debug(
+                        "Acquired %d CPUs for %s (family %s: %d/%d, global: %d/%s)",
+                        cpu_count, machine_type, family,
+                        self._family_cpus_in_use[family], max_family_cpus,
+                        self._global_cpus_in_use,
+                        self._global_max if self._global_max else "unlimited")
                     return True
             # Wait and retry
             await asyncio.sleep(1)
@@ -437,11 +459,13 @@ class CpuQuotaManager:
         cpu_count = get_cpu_count(machine_type)
 
         async with self._lock:
-            current_usage = self._family_cpus_in_use.get(family, 0)
-            self._family_cpus_in_use[family] = max(0, current_usage - cpu_count)
-            LOGGER.debug("Released %d CPUs for %s (family %s: %d in use)",
-                        cpu_count, machine_type, family,
-                        self._family_cpus_in_use[family])
+            family_usage = self._family_cpus_in_use.get(family, 0)
+            self._family_cpus_in_use[family] = max(0, family_usage - cpu_count)
+            self._global_cpus_in_use = max(0, self._global_cpus_in_use - cpu_count)
+            LOGGER.debug(
+                "Released %d CPUs for %s (family %s: %d, global: %d)",
+                cpu_count, machine_type, family,
+                self._family_cpus_in_use[family], self._global_cpus_in_use)
 
 
 async def run_single_benchmark(config: BenchmarkConfig, project: str, zone: str,
@@ -550,13 +574,15 @@ def main() -> None:
             family = get_machine_family(config.machine_type)
             print(f"  - {config.machine_type} + {config.stockfish.name} ({cpu_count} CPUs, family: {family})")
         print()
-        print("CPU quota limits per family:")
+        print("CPU quota limits:")
+        print(f"  Global (CPUS_ALL_REGIONS): {GLOBAL_MAX_CPUS} CPUs max")
+        print("  Per family:")
         for family, max_cpus in MAX_CPUS_PER_FAMILY.items():
-            print(f"  - {family}: {max_cpus} CPUs max")
+            print(f"    - {family}: {max_cpus} CPUs max")
         return
 
     # Create quota manager once and use for validation and execution
-    quota_manager = CpuQuotaManager(MAX_CPUS_PER_FAMILY, DEFAULT_MAX_CPUS)
+    quota_manager = CpuQuotaManager(MAX_CPUS_PER_FAMILY, DEFAULT_MAX_CPUS, GLOBAL_MAX_CPUS)
 
     # Validate all configs before starting any tests
     for config in BENCHMARK_CONFIGS:
