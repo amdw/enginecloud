@@ -21,6 +21,8 @@ GCP_ZONE=
 # gcloud compute machine-types list --filter="zone=(${GCP_ZONE})"
 # See also https://cloud.google.com/compute/docs/machine-resource
 GCP_MACHINE_TYPE=
+GCP_NETWORK=ipv6
+GCP_SUBNET=default-ipv6
 
 # Newer Stockfish binaries require newer libc versions hence relatively recent Ubuntu
 # gcloud compute images list | grep ubuntu

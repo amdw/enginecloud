@@ -45,6 +45,7 @@ func main() {
 		"`which gcloud`", "compute", "ssh",
 		"--zone", "${GCP_ZONE}",
 		"${GCP_INSTANCE_NAME}", "--project", "${GCP_PROJECT}",
+		"--tunnel-through-iap",
 		\`--command="${STOCKFISH_BINARY_LINK}"\`,
 		"--quiet")
 	cmd.Stdin = os.Stdin
@@ -79,6 +80,10 @@ echo "`date`: Creating virtual machine..."
 gcloud compute instances create $GCP_INSTANCE_NAME \
 	--project $GCP_PROJECT \
 	--zone $GCP_ZONE \
+	--network $GCP_NETWORK \
+	--subnet $GCP_SUBNET \
+	--stack-type=IPV4_IPV6 \
+	--no-address \
 	--machine-type $GCP_MACHINE_TYPE \
 	--image-project $GCP_IMAGE_PROJECT \
 	--image-family $GCP_IMAGE_FAMILY \
@@ -96,7 +101,7 @@ gcloud compute instances create $GCP_INSTANCE_NAME \
 
 echo "`date`: Virtual machine has been created and should now be consuming billable resources."
 
-until gcloud compute ssh --zone $GCP_ZONE $GCP_INSTANCE_NAME --project $GCP_PROJECT --command "/home/${SSH_USER}/enginecloud/stockfish/benchmarks/sfbench.py $STOCKFISH_BINARY_LINK --quick" --quiet 2>/dev/null
+until gcloud compute ssh --zone $GCP_ZONE $GCP_INSTANCE_NAME --project $GCP_PROJECT --tunnel-through-iap --command "/home/${SSH_USER}/enginecloud/stockfish/benchmarks/sfbench.py $STOCKFISH_BINARY_LINK --quick" --quiet 2>/dev/null
 do
 	echo "Waiting for machine to be ready..."
 	sleep 5

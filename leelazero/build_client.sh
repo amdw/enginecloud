@@ -31,6 +31,7 @@ func main() {
 		"`which gcloud`", "compute", "ssh",
 		"--zone", "${GCP_ZONE}",
 		"${GCP_INSTANCE_NAME}", "--project", "${GCP_PROJECT}",
+		"--tunnel-through-iap",
 		\`--command="/home/${SSH_USER}/lc0/build/release/lc0"\`,
 		"--quiet")
 	cmd.Stdin = os.Stdin

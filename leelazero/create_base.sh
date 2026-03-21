@@ -29,6 +29,10 @@ leelazero/build_client.sh
 gcloud compute instances create $GCP_INSTANCE_NAME \
     --project $GCP_PROJECT \
     --zone $GCP_ZONE \
+	--network $GCP_NETWORK \
+	--subnet $GCP_SUBNET \
+    --stack-type=IPV4_IPV6 \
+    --no-address \
     --machine-type $GCP_MACHINE_TYPE \
     --accelerator $ACCELERATOR_PARAMS \
     --image-project $GCP_BASE_IMAGE_PROJECT \

@@ -48,6 +48,8 @@ GCP_IMAGE_PROJECT = "ubuntu-os-cloud"
 GCP_IMAGE_FAMILY = "ubuntu-2404-lts-amd64"
 PROVISIONING_MODEL = "SPOT"
 MAX_RUN_DURATION = "1h"
+GCP_NETWORK = "ipv6"
+GCP_SUBNET = "default-ipv6"
 
 # Instance naming
 INSTANCE_PREFIX = "sfbench"
@@ -241,6 +243,10 @@ class BenchmarkRun:
             "gcloud", "compute", "instances", "create", self.instance_name,
             "--project", self.project,
             "--zone", self.zone,
+            "--network", GCP_NETWORK,
+            "--subnet", GCP_SUBNET,
+            "--stack-type=IPV4_IPV6",
+            "--no-address",
             "--machine-type", self.config.machine_type,
             "--image-project", GCP_IMAGE_PROJECT,
             "--image-family", GCP_IMAGE_FAMILY,
@@ -274,6 +280,7 @@ class BenchmarkRun:
                     "--zone", self.zone,
                     self.instance_name,
                     "--project", self.project,
+                    "--tunnel-through-iap",
                     f"--command={check_command}",
                     "--quiet",
                 ], check=False)
@@ -300,6 +307,7 @@ class BenchmarkRun:
             "--zone", self.zone,
             self.instance_name,
             "--project", self.project,
+            "--tunnel-through-iap",
             f"--command={benchmark_command}",
             "--quiet",
         ]

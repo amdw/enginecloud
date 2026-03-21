@@ -19,4 +19,5 @@ source leelazero/settings.sh
 
 gcloud compute ssh $GCP_INSTANCE_NAME \
     --project=$GCP_PROJECT \
-    --zone=$GCP_ZONE
+    --zone=$GCP_ZONE \
+    --tunnel-through-iap

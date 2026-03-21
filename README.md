@@ -171,8 +171,22 @@ fun in the process!
   Windows as well, but I have no personal interest in doing that.
 - A Google Cloud account (see [this
   guide](https://cloud.google.com/docs/get-started))
-- A Google Cloud project with the [Google Compute Engine
-  API](https://console.cloud.google.com/compute) enabled
+- A Google Cloud project with the following setup:
+  - The [Google Compute Engine API](https://console.cloud.google.com/compute)
+    must be enabled
+  - You must have a custom-mode [VPC
+    network](https://docs.cloud.google.com/vpc/docs/vpc) available in the
+    project, with an `IPV4_IPV6` subnet in the region you want to use, and a
+    firewall rule must be in place allowing SSH over IAP
+    ([documentation](https://docs.cloud.google.com/iap/docs/using-tcp-forwarding#gcloud)):
+    - `gcloud compute networks create ipv6 --subnet-mode=custom`
+    - `gcloud compute networks subnets create default-ipv6 --network=ipv6 --region=$REGION --range=10.0.0.0/24 --stack-type=IPV4_IPV6 --ipv6-access-type=EXTERNAL`
+    - `gcloud compute firewall-rules create allow-ssh-ingress-from-iap --network=ipv6 --direction=INGRESS --action=allow --rules=tcp:22 --source-ranges=35.235.240.0/20`
+  - There must be sufficient [Google Compute Engine
+    quota](https://cloud.google.com/compute/quotas) to run the types of VM you
+    want. The quota you get with a free trial account or a newly set up account
+    should be sufficient for basic experiments with Stockfish, but for machine
+    types with more CPU cores or GPUs, you will need to obtain additional quota.
 - You will need the following software installed:
   - A text editor of your choice
   - The `bash` shell
@@ -185,11 +199,6 @@ init`
     engines](https://www.chessprogramming.org/UCI#GUIs). All my testing was done
     using [HIARCS Chess Explorer](https://www.hiarcs.com/chess-explorer.html),
     but there are plenty of free and open source options.
-- Sufficient [Google Compute Engine
-  quota](https://cloud.google.com/compute/quotas) to run the types of VM you
-  want. The quota you get with a free trial account or a newly set up account
-  should be sufficient for basic experiments with Stockfish, but for machine
-  types with more CPU cores or GPUs, you will need to obtain additional quota.
 
 All shell commands are run from the root of this repository unless otherwise
 stated.
